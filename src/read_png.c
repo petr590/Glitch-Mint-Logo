@@ -1,9 +1,7 @@
+#include "read_png.h"
 #include <errno.h>
-#include <libpng/png.h>
 
-#define ERROR_READ_PNG 35
-
-static int read_png(const char* filename, png_structp* res_png_ptr, png_infop* res_info_ptr, png_infop* res_end_info) {
+int read_png(const char* filename, png_structp* res_png_ptr, png_infop* res_info_ptr, png_infop* res_end_info) {
 	FILE* fp = fopen(filename, "rb");
 	if (!fp) return ENOENT;
 
