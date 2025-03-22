@@ -1,45 +1,53 @@
 #include "read_png.h"
+#include <stdlib.h>
 #include <errno.h>
 
-int read_png(const char* filename, png_structp* res_png_ptr, png_infop* res_info_ptr, png_infop* res_end_info) {
+#define PNG_HEADER_LEN 8
+
+static void print_error_and_exit(FILE* fp, const char* filename) {
+	fclose(fp);
+	fprintf(stderr, "Cannot read file '%s' as png\n", filename);
+	exit(EXIT_FAILURE);
+}
+
+void read_png(const char* filename, png_structp* res_png_ptr, png_infop* res_info_ptr, png_infop* res_end_info) {
 	FILE* fp = fopen(filename, "rb");
-	if (!fp) return ENOENT;
+	if (!fp) {
+		fprintf(stderr, "Cannot open file '%s': %m\n", filename);
+		exit(errno);
+	}
 
-	char header[8];
-	fread(header, 1, 8, fp);
+	char header[PNG_HEADER_LEN];
+	fread(header, 1, PNG_HEADER_LEN, fp);
 
-	if (png_sig_cmp(header, 0, 8)) {
-		fclose(fp);
-		return ERROR_READ_PNG;
+	if (png_sig_cmp(header, 0, PNG_HEADER_LEN)) {
+		print_error_and_exit(fp, filename);
 	}
 
 	png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (!png_ptr) {
-		return ERROR_READ_PNG;
+		print_error_and_exit(fp, filename);
 	}
 
 	png_infop info_ptr = png_create_info_struct(png_ptr);
 	if (!info_ptr) {
 		png_destroy_read_struct(&png_ptr, NULL, NULL);
-		fclose(fp);
-		return ERROR_READ_PNG;
+		print_error_and_exit(fp, filename);
 	}
 
 	png_infop end_info = png_create_info_struct(png_ptr);
 	if (!end_info) {
 		png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-		fclose(fp);
-		return ERROR_READ_PNG;
+		print_error_and_exit(fp, filename);
 	}
 
 	if (setjmp(png_jmpbuf(png_ptr))) {
 		png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-		fclose(fp);
-		return ERROR_READ_PNG;
+		print_error_and_exit(fp, filename);
 	}
 
 	png_init_io(png_ptr, fp);
-	png_set_sig_bytes(png_ptr, 8);
+	png_set_sig_bytes(png_ptr, PNG_HEADER_LEN);
 
 	png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_STRIP_16 | PNG_TRANSFORM_BGR, NULL);
 	fclose(fp);
@@ -47,5 +55,4 @@ int read_png(const char* filename, png_structp* res_png_ptr, png_infop* res_info
 	*res_png_ptr = png_ptr;
 	*res_info_ptr = info_ptr;
 	*res_end_info = end_info;
-	return 0;
 }

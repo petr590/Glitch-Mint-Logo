@@ -7,6 +7,6 @@ typedef struct {
 	color_t* vaddr;
 } fb_info;
 
-fb_info create_fb(int dev_file, uint32_t width, uint32_t height);
+fb_info* create_fb(int dev_file, uint32_t width, uint32_t height);
 
-void release_fb(int dev_file, const fb_info* fb);
+void release_fb(int dev_file, fb_info* fb);

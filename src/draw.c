@@ -13,6 +13,12 @@
 #define MINOR_GLITCH_DURATON 2
 #define MINOR_GLITCH_PERIOD 15
 
+#define CHAR_START 0x20
+#define CHAR_END   0x80
+#define CHARS (CHAR_END - CHAR_START)
+#define TEXT_COLOR 0x87CF3E
+#define TEXT_MARGIN 10
+
 static inline uint32_t u32min(uint32_t num1, uint32_t num2) {
 	return num1 < num2 ? num1 : num2;
 }
@@ -29,6 +35,14 @@ static inline int randrange(int from, int to) {
 	return rand() % (to - from + 1) + from;
 }
 
+static inline int randrange_seed(int from, int to, int seed) {
+	int old_seed = rand();
+	srand(seed * RANDOM_CONSTANT);
+	int res = randrange(from, to);
+	srand(old_seed);
+	return res;
+}
+
 static inline color_t mix(color_t rgb, color_t argb) {
 	uint8_t alpha = argb >> 24;
 	uint8_t r = ((uint8_t)(rgb >> 16) * (0xFF - alpha) + (uint8_t)(argb >> 16) * alpha) / 0xFF;
@@ -43,20 +57,13 @@ static float get_noise(int tick) {
 		return (float)(MAJOR_GLITCH_DURATON - tick) * (1.f / MAJOR_GLITCH_DURATON);
 	}
 
-	int seed = rand();
-	srand(tick / MINOR_GLITCH_PERIOD * RANDOM_CONSTANT);
-	int offset = rand() % MINOR_GLITCH_PERIOD;
-	srand(seed);
-
+	int offset = randrange_seed(0, MINOR_GLITCH_PERIOD - 1, tick / MINOR_GLITCH_PERIOD);
 	return ((tick + offset) % MINOR_GLITCH_PERIOD < MINOR_GLITCH_DURATON) ? 0.8f : 0.0f;
 }
 
 
 static void draw_bg(int tick, uint32_t width, uint32_t height, uint8_t* frame, color_t* bg_buffer) {
-	int seed = rand();
-	srand(tick / BG_GLITCH_PERIOD * RANDOM_CONSTANT);
-	int offset = rand() % BG_GLITCH_PERIOD;
-	srand(seed);
+	int offset = randrange_seed(0, BG_GLITCH_PERIOD - 1, tick / BG_GLITCH_PERIOD);
 
 	if (tick % 4 < 2 && (tick + offset) % BG_GLITCH_PERIOD < BG_GLITCH_DURATION) {
 		uint32_t min_h = height / 20;
@@ -134,7 +141,96 @@ static void draw_logo(
 }
 
 
-void draw(int tick, uint32_t width, uint32_t height, uint8_t *frame, color_t* bg_buffer, const png_struct* png_ptr, const png_info* info_ptr) {
-	draw_bg(tick, width, height, frame, bg_buffer);
-	draw_logo(tick, width, height, frame, bg_buffer, png_ptr, info_ptr);
+typedef struct {
+	uint32_t width, height;
+	uint8_t* buffer;
+} glyth_t;
+
+
+static void render_glyth(glyth_t glyths[CHARS], char ch, FT_Face face) {
+	glyth_t* glyth = &glyths[ch - CHAR_START];
+	if (glyth->buffer) return;
+
+	const FT_UInt glyph_index = FT_Get_Char_Index(face, ch);
+	FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
+	FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
+
+	FT_Bitmap* bitmap = &face->glyph->bitmap;
+
+	glyth->width = bitmap->width;
+	glyth->height = bitmap->rows;
+	uint32_t size = glyth->width * glyth->height;
+
+	glyth->buffer = malloc(size);
+	memcpy(glyth->buffer, bitmap->buffer, size);
+}
+
+
+static void draw_name(
+		int tick, uint32_t width, uint32_t height, color_t* frame, color_t* bg_buffer,
+		const char* name, FT_Face face, uint32_t img_height
+) {
+	static glyth_t glyths[CHARS] = {
+		{
+			.width = SPACE_WIDTH,
+			.height = 0,
+			.buffer = "", // Пустой буфер, но не NULL
+		},
+		// Всё остальное заполняется нулями
+	};
+
+	const uint32_t namelen = strlen(name);
+	const uint32_t len = u32min(namelen, tick + 1);
+	char text_buf[len];
+	memcpy(text_buf, name, len);
+
+	if (len < namelen && text_buf[len - 1] != ' ') {
+		text_buf[len - 1] = randrange_seed(CHAR_START, CHAR_END - 1, tick);
+	}
+
+	uint32_t str_width = 0;
+
+	for (uint32_t i = 0; i < len; i++) {
+		const char ch = text_buf[i];
+		if (ch < CHAR_START || ch >= CHAR_END) continue;
+		render_glyth(glyths, ch, face);
+		str_width += glyths[ch - CHAR_START].width;
+	}
+
+	uint32_t sx = (width - str_width) / 2;
+
+	for (uint32_t i = 0; i < len; i++) {
+		const char ch = text_buf[i];
+		const glyth_t* glyth = &glyths[ch - CHAR_START];
+
+		const uint32_t sy = (height + img_height) / 2 + TEXT_MARGIN + GLYTH_HEIGHT - glyth->height;
+
+		const uint32_t glyth_w = glyth->width;
+		const uint32_t glyth_h = glyth->height;
+		const uint8_t* buffer = glyth->buffer;
+
+		for (uint32_t y = 0; y < glyth_h; y++) {
+			for (uint32_t x = 0; x < glyth_w; x++) {
+
+				uint8_t alpha = buffer[y * glyth_w + x];
+				frame[(y + sy) * width + x + sx] = mix(bg_buffer[y], alpha << 24 | TEXT_COLOR);
+			}
+		}
+
+		sx += glyth->width;
+	}
+}
+
+
+void draw(
+	int tick, uint32_t width, uint32_t height, color_t* frame, color_t* bg_buffer,
+	const png_struct* png_ptr, const png_info* info_ptr,
+	const char* name, FT_Face face
+) {
+	draw_bg(tick, width, height, (uint8_t*) frame, bg_buffer);
+	draw_logo(tick, width, height, (uint8_t*) frame, bg_buffer, png_ptr, info_ptr);
+
+	if (face != NULL) {
+		draw_name(tick, width, height, frame, bg_buffer, name, face, png_get_image_height(png_ptr, info_ptr));
+	}
 }
