@@ -1,0 +1,3 @@
+/etc/glitch-mint-logo/config
+/etc/systemd/system/glitch-mint-logo-start.service
+/etc/systemd/system/glitch-mint-logo-stop.service

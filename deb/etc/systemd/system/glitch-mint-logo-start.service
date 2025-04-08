@@ -1,0 +1,16 @@
+[Unit]
+Description=Start Glitch Mint Logo Screen
+DefaultDependencies=no
+After=systemd-udev-trigger.service systemd-udevd.service keyboard-setup.service
+ConditionKernelCommandLine=!splash
+
+[Service]
+ExecStart=/bin/glitch-mint-logo
+Type=forking
+PIDFile=/run/glitch-mint-logo/pid
+TimeoutSec=5
+KillMode=none
+SendSIGKILL=no
+
+[Install]
+WantedBy=multi-user.target

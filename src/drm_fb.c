@@ -36,8 +36,9 @@ fb_info* create_fb(int dev_file, uint32_t width, uint32_t height) {
 }
 
 void release_fb(int dev_file, fb_info *fb) {
-	struct drm_mode_destroy_dumb destroy = {};
-	destroy.handle = fb->handle;
+	struct drm_mode_destroy_dumb destroy = {
+		.handle = fb->handle
+	};
 	
 	drmModeRmFB(dev_file, fb->fb_id);
 	munmap(fb->vaddr, fb->size);

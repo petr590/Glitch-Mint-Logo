@@ -1,0 +1,8 @@
+[Unit]
+Description=Terminate Glitch Mint Logo Screen
+After=rc-local.service glitch-mint-logo-start.service systemd-user-sessions.service
+
+[Service]
+ExecStart=/bin/glitch-mint-logo --stop
+Type=oneshot
+TimeoutSec=20
