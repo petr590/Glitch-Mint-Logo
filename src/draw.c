@@ -116,7 +116,7 @@ static void draw_bg(int tick, uint32_t width, uint32_t height, uint8_t* frame, c
 			uint8_t gs = dark ? BG_GS_2 : BG_GS_1;
 
 			memset(frame + y * width * sizeof(color_t), gs, line_h * width * sizeof(color_t));
-			memset((void*)bg_buffer + y * sizeof(color_t), gs, line_h * sizeof(color_t));
+			memset(bg_buffer + y, gs, line_h * sizeof(color_t));
 
 			y += line_h;
 		}

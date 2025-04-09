@@ -9,6 +9,7 @@ ln "$BIN_SRC_PATH" "$BIN_DST_PATH"
 
 size=$(du -ks ./deb --exclude=./deb/DEBIAN | cut -f 1)
 sed -Ei "s/^Installed-Size:.*$/Installed-Size: $size/g" ./deb/DEBIAN/control
+find ./deb/* -maxdepth 0 -not -name DEBIAN -print0 | xargs -0 md5deep -r > ./deb/DEBIAN/md5sums
 
 package="$(sed -nE 's/^Package:\s*(.*)$/\1/p' ./deb/DEBIAN/control)"
 version="$(sed -nE 's/^Version:\s*(.*)$/\1/p' ./deb/DEBIAN/control)"

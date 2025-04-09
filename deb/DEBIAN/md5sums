@@ -1,0 +1,9 @@
+951e83d9bea23759d73acbabac88947c  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/systemd/system/glitch-mint-logo-reboot.service
+197c00d83b2b97ea7321b2c66e7130f5  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/systemd/system/glitch-mint-logo-halt.service
+93879f112313d95b9f2f1b4169c958cf  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/systemd/system/glitch-mint-logo-start.service
+432def7c59a4f912322d86b8a8c36057  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/systemd/system/glitch-mint-logo-poweroff.service
+2e2158fb85be113bcb80e270b9a96a07  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/systemd/system/glitch-mint-logo-stop.service
+d3d41dc671b3073cadf51ff1c39b8a01  /home/winch/0x590/programming/c/glitch-mint-logo/deb/bin/glitch-mint-logo
+ea24a7062ad1e6d9051f4816b0a22a8a  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/glitch-mint-logo/logo.png
+944a8dc52216c96fe70e00bc0c42c57a  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/glitch-mint-logo/config
+d3e281ca75369e8517b3910bc46a7ed0  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/glitch-mint-logo/UbuntuMono-Bold.ttf

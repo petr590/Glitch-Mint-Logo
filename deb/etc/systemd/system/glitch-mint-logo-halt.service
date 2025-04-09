@@ -1,6 +1,7 @@
 [Unit]
-Description=Glitch Mint Logo Screen
-After=systemd-udev-trigger.service systemd-udevd.service keyboard-setup.service
+Description=Glitch Mint Logo Halt Screen
+After=getty@tty1.service display-manager.service glitch-mint-logo-start.service
+Before=systemd-halt.service
 DefaultDependencies=no
 ConditionKernelCommandLine=splash
 ConditionKernelCommandLine=!glitch-mint-logo.enable=0
@@ -10,8 +11,6 @@ ExecStart=/bin/glitch-mint-logo
 Type=forking
 PIDFile=/run/glitch-mint-logo/pid
 TimeoutSec=5
-KillMode=none
-SendSIGKILL=no
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=halt.target

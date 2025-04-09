@@ -6,3 +6,6 @@ After=rc-local.service glitch-mint-logo-start.service systemd-user-sessions.serv
 ExecStart=/bin/glitch-mint-logo --stop
 Type=oneshot
 TimeoutSec=20
+
+[Install]
+WantedBy=multi-user.target

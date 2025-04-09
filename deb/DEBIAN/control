@@ -1,12 +1,12 @@
 Package: glitch-mint-logo
-Version: 1.2-1
-Maintainer: 0x590
+Version: 1.3.2-5
+Maintainer: 0x590 <petrwinch-code@mail.ru>
 Architecture: all
 Section: misc
 Description: Утилита анимации загрузки.
  Glitch Mint Logo выводит логотип mint и текстовое описание системы
  при загрузке и анимирует всё это глитч-эффектами. Эта программа была
  вдохновлена Plymouth, который, однако, ограничен в возможностях анимации.
-Depends: libdrm2 (>= 2.4.107-8), libpng16-16 (>= 1.6.37-2), libfreetype6 (>= 2.10.1-2), libconfig9 (>= 1.5-0.4)
-Installed-Size: 252
+Depends: systemd, libdrm2 (>= 2.4.107-8), libpng16-16 (>= 1.6.37-2), libfreetype6 (>= 2.10.1-2), libconfig9 (>= 1.5-0.4)
+Installed-Size: 264
 Priority: optional
