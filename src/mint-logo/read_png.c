@@ -17,10 +17,9 @@ void read_png(const char* filename, png_structp* res_png_ptr, png_infop* res_inf
 		exit(errno);
 	}
 
-	char header[PNG_HEADER_LEN];
-	fread(header, 1, PNG_HEADER_LEN, fp);
-
-	if (png_sig_cmp(header, 0, PNG_HEADER_LEN)) {
+	png_byte header[PNG_HEADER_LEN];
+	if (fread(header, 1, PNG_HEADER_LEN, fp) < PNG_HEADER_LEN ||
+		png_sig_cmp(header, 0, PNG_HEADER_LEN)) {
 		print_error_and_exit(fp, filename);
 	}
 
