@@ -1,7 +1,9 @@
-#include "draw.h"
+#include "module.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <libpng/png.h>
+
 #include <assert.h>
 
 #define BG_GS_1 0x1A
@@ -13,7 +15,7 @@
  */
 
 #define BG_GLITCH_DURATION 4
-#define BG_GLITCH_PERIOD 6
+#define BG_GLITCH_PERIOD 10
 
 #define START_GLITCH_DURATON 10
 #define MAJOR_GLITCH_DURATON 2
@@ -105,7 +107,8 @@ static float get_minor_noise(int tick) {
 }
 
 
-static void draw_bg(int tick, uint32_t width, uint32_t height, uint8_t* frame, color_t* bg_buffer) {
+static void draw_bg(int tick, uint32_t width, uint32_t height, uint8_t* frame) {
+
 	if (tick % 4 < 2 && tick_remainder(tick, BG_GLITCH_PERIOD) < BG_GLITCH_DURATION) {
 		uint32_t min_h = height / 20;
 		uint32_t max_h = height / 5;
@@ -128,10 +131,8 @@ static void draw_bg(int tick, uint32_t width, uint32_t height, uint8_t* frame, c
 }
 
 
-static void draw_logo(
-		int tick, uint32_t width, uint32_t height, uint8_t* frame, const color_t* bg_buffer,
-		const png_struct* png_ptr, const png_info* info_ptr
-) {
+static void draw_logo(int tick, uint32_t width, uint32_t height, uint8_t* frame) {
+
 	const uint32_t img_w = u32min(width, png_get_image_width(png_ptr, info_ptr));
 	const uint32_t img_h = u32min(height, png_get_image_height(png_ptr, info_ptr));
 	const uint32_t start_x = (width - img_w) / 2;
@@ -192,7 +193,7 @@ typedef struct {
 } glyth_t;
 
 
-static void render_glyth(glyth_t glyths[CHARS], char ch, FT_Face face) {
+static void render_glyth(glyth_t glyths[CHARS], char ch) {
 	glyth_t* glyth = &glyths[ch - CHAR_START];
 	if (glyth->buffer) return;
 
@@ -211,10 +212,7 @@ static void render_glyth(glyth_t glyths[CHARS], char ch, FT_Face face) {
 }
 
 
-static void draw_name(
-		int tick, uint32_t width, uint32_t height, color_t* frame, color_t* bg_buffer,
-		const char* name, FT_Face face, uint32_t img_height
-) {
+static void draw_system_name(int tick, uint32_t width, uint32_t height, color_t* frame) {
 	static glyth_t glyths[CHARS] = {
 		// Первый глиф - пробел
 		{
@@ -225,10 +223,11 @@ static void draw_name(
 		// Всё остальное заполняется нулями
 	};
 
-	const uint32_t namelen = strlen(name);
+	const uint32_t img_height = png_get_image_height(png_ptr, info_ptr);
+	const uint32_t namelen = strlen(system_name);
 	const uint32_t len = u32min(namelen, tick + 1);
 	char text_buf[len];
-	memcpy(text_buf, name, len);
+	memcpy(text_buf, system_name, len);
 
 	if (len < namelen && text_buf[len - 1] != ' ') {
 		text_buf[len - 1] = randchoose(randrange('a', 'z'), randrange('A', 'Z'));
@@ -239,7 +238,7 @@ static void draw_name(
 	for (uint32_t i = 0; i < len; i++) {
 		const char ch = text_buf[i];
 		if (ch < CHAR_START || ch >= CHAR_END) continue;
-		render_glyth(glyths, ch, face);
+		render_glyth(glyths, ch);
 		str_width += glyths[ch - CHAR_START].width;
 	}
 
@@ -275,15 +274,11 @@ static void draw_name(
 }
 
 
-void draw(
-	int tick, uint32_t width, uint32_t height, color_t* frame, color_t* bg_buffer,
-	const png_struct* png_ptr, const png_info* info_ptr,
-	const char* name, FT_Face face
-) {
-	draw_bg(tick, width, height, (uint8_t*) frame, bg_buffer);
-	draw_logo(tick, width, height, (uint8_t*) frame, bg_buffer, png_ptr, info_ptr);
+void glspl_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
+	draw_bg(tick, width, height, (uint8_t*) frame);
+	draw_logo(tick, width, height, (uint8_t*) frame);
 
 	if (face != NULL) {
-		draw_name(tick, width, height, frame, bg_buffer, name, face, png_get_image_height(png_ptr, info_ptr));
+		draw_system_name(tick, width, height, frame);
 	}
 }

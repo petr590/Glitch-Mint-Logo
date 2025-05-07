@@ -1,3 +1,4 @@
+module = "libgml-logo.so"
 logo_path = "/etc/glitch-mint-logo/logo.png";
 font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";
 dev_path  = "/dev/dri/card0";

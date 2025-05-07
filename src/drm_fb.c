@@ -1,4 +1,5 @@
 #include "drm_fb.h"
+#include <stdlib.h>
 #include <sys/mman.h>
 #include <xf86drm.h>
 #include <xf86drmMode.h>

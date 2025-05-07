@@ -1,90 +1,73 @@
-#include "draw.h"
 #include "drm_fb.h"
-#include "read_png.h"
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dlfcn.h>
 #include <sys/stat.h>
-#include <string.h>
-#include <libgen.h>
 #include <signal.h>
+#include <time.h>
 #include <errno.h>
 
-#include <libconfig.h>
 #include <xf86drm.h>
 #include <xf86drmMode.h>
-#include <freetype2/ft2build.h>
-#include FT_FREETYPE_H
 
 #include <assert.h>
 
-#define PID_FILE    "/run/glitch-mint-logo/pid"
-#define CONFIG_FILE "/etc/glitch-mint-logo/config"
+#define PID_FILE "/run/glitch-mint-logo/pid"
 
-int RANDOM_CONSTANT = 0;
 
-static const char *logo_path, *font_path, *dev_path;
+// ---------------------------------------- dynamic module ----------------------------------------
 
-static FT_Library freeType;
-static FT_Face face;
-static png_structp png_ptr;
-static png_infop info_ptr, end_info;
+static const char *module_filename;
+static void (*read_config)(config_t*);
+static void (*setup)(void);
+static void (*setup_after_drm)(uint32_t, uint32_t);
+static void (*cleanup_before_drm)(void);
+static void (*cleanup)(void);
+static void (*draw)(int, uint32_t, uint32_t, color_t*);
+
+static void* load_sym(void* handle, const char* id) {
+	void* sym = dlsym(handle, id);
+
+	char* error;
+	if ((error = dlerror()) != NULL)  {
+		fprintf(stderr, "Cannot load symbol %s from '%s': %s\n", id, module_filename, error);
+		exit(EXIT_FAILURE);
+	}
+
+	return sym;
+}
+
+static void load_module(void) {
+	void* handle = dlopen(module_filename, RTLD_LAZY);
+
+	if (!handle) {
+		fprintf(stderr, "Cannot load dynamic library: %s\n", module_filename, dlerror());
+		exit(EXIT_FAILURE);
+	}
+
+	read_config        = load_sym(handle, "glspl_read_config");
+	setup              = load_sym(handle, "glspl_setup");
+	setup_after_drm    = load_sym(handle, "glspl_setup_after_drm");
+	cleanup_before_drm = load_sym(handle, "glspl_setup_after_drm");
+	cleanup            = load_sym(handle, "glspl_cleanup");
+	draw               = load_sym(handle, "glspl_draw");
+}
+
+
+// ------------------------------------------ resources -------------------------------------------
+
+static const char *dev_path;
+
 static int dev_file = -1;
 static drmModeRes *resources;
 static drmModeConnector *connector;
 static drmModeCrtc *saved_crtc;
 static fb_info *fb_info1, *fb_info2;
-static color_t *bg_buffer;
 
 
-static void release_all() {
-	if (bg_buffer) { free(bg_buffer); bg_buffer = NULL; }
-
-	if (dev_file >= 0 && fb_info1) { release_fb(dev_file, fb_info1); fb_info1 = NULL; }
-	if (dev_file >= 0 && fb_info2) { release_fb(dev_file, fb_info2); fb_info2 = NULL; }
-	
-	if (dev_file >= 0 && connector && saved_crtc) {
-		drmModeSetCrtc(dev_file, saved_crtc->crtc_id, saved_crtc->buffer_id, saved_crtc->x, saved_crtc->y, &connector->connector_id, 1, &saved_crtc->mode);
-		drmModeFreeCrtc(saved_crtc);
-		saved_crtc = NULL;
-	}
-	
-	if (connector) { drmModeFreeConnector(connector); connector = NULL; }
-	if (resources) { drmModeFreeResources(resources); resources = NULL; }
-	
-	if (dev_file >= 0) { close(dev_file); dev_file = -1; }
-
-	if (png_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-
-	if (face) { FT_Done_Face(face); face = NULL; }
-	if (freeType) { FT_Done_FreeType(freeType); freeType = NULL; }
-}
-
-static void on_signal(int sig) {
-	printf("Exited by signal %d\n", sig);
-	signal(sig, SIG_DFL);
-	exit((sig == SIGABRT || sig == SIGSEGV) ? EXIT_FAILURE : EXIT_SUCCESS);
-}
-
-
-static void init_font_face() {
-	FT_Error err = FT_Init_FreeType(&freeType);
-	if (err) {
-		fprintf(stderr, "Cannot initialize FreeType\n");
-		exit(EXIT_FAILURE);
-	}
-
-	err = FT_New_Face(freeType, font_path, 0, &face);
-	if (err) {
-		fprintf(stderr, "Cannot load font from file '%s'\n", font_path);
-		exit(EXIT_FAILURE);
-	}
-
-	FT_Set_Pixel_Sizes(face, 0, GLYTH_HEIGHT);
-}
-
-
-static void init_drm() {
+static void init_drm(void) {
 	dev_file = open(dev_path, O_RDWR | O_CLOEXEC);
 	if (dev_file < 0) {
 		fprintf(stderr, "Cannot open '%s': %m\n", dev_path);
@@ -102,28 +85,40 @@ static void init_drm() {
 	saved_crtc = drmModeGetCrtc(dev_file, resources->crtcs[0]);
 }
 
-static const char* get_system_name() {
-	FILE* fp = popen("lsb_release -sd", "r");
 
-	if (!fp) {
-		fprintf(stderr, "Cannot execute `lsb_release -sd`: %m\n");
-		return "";
-	}
+static void release_all(void) {
+	if (cleanup_before_drm) cleanup_before_drm();
 
-	static char name[64];
-	fgets(name, sizeof(name), fp);
-	pclose(fp);
-
-	char* end = strchr(name, '\n');
-	if (end) {
-		end[0] = '\0';
+	if (dev_file >= 0 && fb_info1) { release_fb(dev_file, fb_info1); fb_info1 = NULL; }
+	if (dev_file >= 0 && fb_info2) { release_fb(dev_file, fb_info2); fb_info2 = NULL; }
+	
+	if (dev_file >= 0 && connector && saved_crtc) {
+		drmModeSetCrtc(dev_file, saved_crtc->crtc_id, saved_crtc->buffer_id, saved_crtc->x, saved_crtc->y, &connector->connector_id, 1, &saved_crtc->mode);
+		drmModeFreeCrtc(saved_crtc);
+		saved_crtc = NULL;
 	}
 	
-	return name;
+	if (connector) { drmModeFreeConnector(connector); connector = NULL; }
+	if (resources) { drmModeFreeResources(resources); resources = NULL; }
+	
+	if (dev_file >= 0) { close(dev_file); dev_file = -1; }
+
+	if (cleanup) cleanup();
+
+	if (dev_path)        { free((void*) dev_path);        dev_path = NULL; }
+	if (module_filename) { free((void*) module_filename); module_filename = NULL; }
+}
+
+static void on_signal(int sig) {
+	printf("Exited by signal %d\n", sig);
+	signal(sig, SIG_DFL);
+	exit((sig == SIGABRT || sig == SIGSEGV || sig == SIGFPE) ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
 
-enum action { START, STOP } action = START;
+// ----------------------------------------- args, config -----------------------------------------
+
+static enum { START, STOP } action = START;
 
 static void parse_args(int argc, const char* argv[]) {
 	for (int i = 1; i < argc; i++) {
@@ -134,29 +129,6 @@ static void parse_args(int argc, const char* argv[]) {
 			exit(EINVAL);
 		}
 	}
-}
-
-static void read_config_str(config_t* cfg_ptr, const char* key, const char** str) {
-	if (!config_lookup_string(cfg_ptr, key, str)) {
-		fprintf(stderr, "Config file (" CONFIG_FILE ") does not contain '%s' setting\n", key);
-		config_destroy(cfg_ptr);
-		exit(EXIT_FAILURE);
-	}
-}
-
-static void read_config() {
-	config_t cfg; 
-	config_init(&cfg);
-
-	if (!config_read_file(&cfg, CONFIG_FILE)) {
-		fprintf(stderr, "%s:%d - %s\n", config_error_file(&cfg), config_error_line(&cfg), config_error_text(&cfg));
-		config_destroy(&cfg);
-		exit(EXIT_FAILURE);
-	}
-
-	read_config_str(&cfg, "logo_path", &logo_path);
-	read_config_str(&cfg, "font_path", &font_path);
-	read_config_str(&cfg, "dev_path" , &dev_path);
 }
 
 
@@ -180,14 +152,36 @@ static void create_dirs(const char* path) {
 	free(buffer);
 }
 
+static void read_config_file(void) {
+	config_t cfg; 
+	config_init(&cfg);
 
-static void start() {
+	if (!config_read_file(&cfg, CONFIG_FILE)) {
+		fprintf(stderr, "Cannot load config: %s:%d - %s\n", config_error_file(&cfg), config_error_line(&cfg), config_error_text(&cfg));
+		config_destroy(&cfg);
+		exit(EXIT_FAILURE);
+	}
+
+	dev_path = read_config_str(&cfg, "dev_path");
+	module_filename = read_config_str(&cfg, "module");
+
+	load_module();
+	read_config(&cfg);
+
+	config_destroy(&cfg);
+}
+
+
+// ----------------------------------------- start, stop ------------------------------------------
+
+static void start(void) {
 	if (fork()) return;
 
 	signal(SIGINT,  on_signal);
-	signal(SIGTERM, on_signal);
-	signal(SIGSEGV, on_signal);
 	signal(SIGABRT, on_signal);
+	signal(SIGFPE,  on_signal);
+	signal(SIGSEGV, on_signal);
+	signal(SIGTERM, on_signal);
 	atexit(release_all);
 	
 	create_dirs(PID_FILE);
@@ -201,16 +195,8 @@ static void start() {
 	fprintf(pid_fp, "%d", getpid());
 	fclose(pid_fp);
 
-	srand(time(NULL));
-	RANDOM_CONSTANT = rand();
-
-	const char* name = get_system_name();
-
-	if (name[0] != '\0') {
-		init_font_face();
-	}
-
-	read_png(logo_path, &png_ptr, &info_ptr, &end_info);
+	read_config_file();
+	setup();
 	init_drm();
 
 	uint32_t connector_id = resources->connectors[0];
@@ -224,12 +210,12 @@ static void start() {
 	fb_info *fbp1 = fb_info1,
 			*fbp2 = fb_info2;
 	
-	bg_buffer = aligned_alloc(sizeof(color_t), height * sizeof(color_t));
-
+	setup_after_drm(width, height);
+	
 	for (int tick = 0;; tick++) {
 		clock_t start = clock();
 
-		draw(tick, width, height, fbp1->vaddr, bg_buffer, png_ptr, info_ptr, name, face);
+		draw(tick, width, height, fbp1->vaddr);
 		drmModeSetCrtc(dev_file, crtc_id, fbp1->fb_id, 0, 0, &connector_id, 1, &connector->modes[0]);
 
 		// Swap buffers
@@ -242,7 +228,7 @@ static void start() {
 }
 
 
-void stop() {
+static void stop(void) {
 	FILE* pid_fp = fopen(PID_FILE, "r");
 
 	if (!pid_fp) {
@@ -262,7 +248,6 @@ void stop() {
 
 int main(int argc, const char* argv[]) {
 	parse_args(argc, argv);
-	read_config();
 
 	switch (action) {
 		case START: start(); break;

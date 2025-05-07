@@ -1,11 +1,16 @@
 #!/bin/sh
 set -e
 
-BIN_SRC_PATH="build/glitch-mint-logo"
-BIN_DST_PATH="deb/bin/glitch-mint-logo"
+make_link() {
+	ln -f "$1" "$2"
+	echo "Created hardlink $2 --> $1"
+}
 
-[ -e "$BIN_DST_PATH" ] && rm "$BIN_DST_PATH"
-ln "$BIN_SRC_PATH" "$BIN_DST_PATH"
+make_link "build/glitch-mint-logo" "deb/bin/glitch-mint-logo"
+
+for lib in build/lib*.so; do
+	make_link "$lib" "deb/lib/${lib#build/}"
+done
 
 size=$(du -ks ./deb --exclude=./deb/DEBIAN | cut -f 1)
 sed -Ei "s/^Installed-Size:.*$/Installed-Size: $size/g" ./deb/DEBIAN/control
@@ -18,3 +23,4 @@ architecture="$(sed -nE 's/^Architecture:\s*(.*)$/\1/p' ./deb/DEBIAN/control)"
 fakeroot dpkg-deb --build ./deb
 
 mv deb.deb "${package}_${version}_${architecture}.deb"
+echo "deb.deb moved to ${package}_${version}_${architecture}.deb"

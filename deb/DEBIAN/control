@@ -1,5 +1,5 @@
 Package: glitch-mint-logo
-Version: 1.3.2-5
+Version: 1.4.0-1
 Maintainer: 0x590 <petrwinch-code@mail.ru>
 Architecture: all
 Section: misc
@@ -8,5 +8,5 @@ Description: Утилита анимации загрузки.
  при загрузке и анимирует всё это глитч-эффектами. Эта программа была
  вдохновлена Plymouth, который, однако, ограничен в возможностях анимации.
 Depends: systemd, libdrm2 (>= 2.4.107-8), libpng16-16 (>= 1.6.37-2), libfreetype6 (>= 2.10.1-2), libconfig9 (>= 1.5-0.4)
-Installed-Size: 264
+Installed-Size: 312
 Priority: optional
