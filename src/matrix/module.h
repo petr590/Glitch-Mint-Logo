@@ -3,8 +3,16 @@
  */
 
 #include "../common.h"
+#include <freetype2/ft2build.h>
+#include FT_FREETYPE_H
 
-extern float *randbuf1, *randbuf2;
+#define TEXT_PADDING 0
+#define CHAR_WIDTH (GLYTH_WIDTH + TEXT_PADDING)
+#define CHAR_HEIGHT (GLYTH_HEIGHT + TEXT_PADDING)
+
+extern FT_Face face;
+extern int text_w, text_h;
+extern char* text_buffer; // Буфер размером text_w * text_h
 
 // Следующие функции вызываются в том порядке, в котором объявлены
 

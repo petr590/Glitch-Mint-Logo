@@ -3,47 +3,23 @@
  */
 
 #include "module.h"
-#include "../util/read_png.h"
 #include "../util/render_glyth.h"
 #include <time.h>
 
-static const char *logo_path, *font_path;
+#define FPS 60
+#define FPS_EPSILON 1
 
-int RANDOM_CONSTANT;
-const char* system_name;
-png_structp png_ptr;
-png_infop info_ptr, end_info;
+static const char* font_path;
+
 FT_Face face;
-color_t* bg_buffer;
+int text_w, text_h;
+char* text_buffer;
 
 void gml_read_config(config_t* cfgp) {
-	logo_path = read_config_str(cfgp, "mint_logo__logo_path");
-	font_path = read_config_str(cfgp, "mint_logo__font_path");
-	printf("%s\n", font_path);
+	font_path = read_config_str(cfgp, "matrix__font_path");
 }
 
 // --------------------------------------------- setup --------------------------------------------
-
-static const char* get_system_name(void) {
-	FILE* fp = popen("lsb_release -sd", "r");
-
-	if (!fp) {
-		perror("Cannot execute `lsb_release -sd`");
-		return "";
-	}
-
-	static char name[64];
-	fgets(name, sizeof(name), fp);
-	pclose(fp);
-
-	char* end = strchr(name, '\n');
-	if (end) {
-		end[0] = '\0';
-	}
-	
-	return name;
-}
-
 
 static FT_Library freeType;
 
@@ -66,35 +42,31 @@ static void init_font_face(void) {
 
 void gml_setup(void) {
 	srand(time(NULL));
-	RANDOM_CONSTANT = rand();
-
-	fps = FPS;
-
-	system_name = get_system_name();
-
-	if (system_name[0] != '\0') {
-		init_font_face();
-	}
-
-	read_png(logo_path, &png_ptr, &info_ptr, &end_info);
+	init_font_face();
 }
 
 void gml_setup_after_drm(uint32_t width, uint32_t height) {
-	bg_buffer = aligned_alloc(sizeof(color_t), height * sizeof(color_t));
+	text_w = (width + CHAR_WIDTH - 1) / CHAR_WIDTH;
+	text_h = (height + CHAR_HEIGHT - 1) / CHAR_HEIGHT;
+
+	const size_t size = text_w * text_h * sizeof(char);
+	text_buffer = malloc(size);
+	memset(text_buffer, ' ', size);
+
+	if (abs(FPS - fps) > FPS_EPSILON) {
+		fps = FPS;
+	}
 }
 
 // ------------------------------------------- cleanup --------------------------------------------
 
 void gml_cleanup_before_drm(void) {
-	if (bg_buffer) { free(bg_buffer); bg_buffer = NULL; }
+	if (text_buffer) { free(text_buffer); text_buffer = NULL; }
 }
 
 void gml_cleanup(void) {
-	if (png_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-
 	if (face) { FT_Done_Face(face); face = NULL; }
 	if (freeType) { FT_Done_FreeType(freeType); freeType = NULL; }
 
 	if (font_path) { free((void*) font_path); font_path = NULL; }
-	if (logo_path) { free((void*) logo_path); logo_path = NULL; }
 }

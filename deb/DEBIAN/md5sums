@@ -1,11 +1,12 @@
-79f7338ef75d853610966f3b193284f7  /home/winch/0x590/programming/c/glitch-mint-logo/deb/bin/glitch-mint-logo
 951e83d9bea23759d73acbabac88947c  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/systemd/system/glitch-mint-logo-reboot.service
+94d18ef24c3d1e34e0d03fa112ebdebe  /home/winch/0x590/programming/c/glitch-mint-logo/deb/bin/glitch-mint-logo
 197c00d83b2b97ea7321b2c66e7130f5  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/systemd/system/glitch-mint-logo-halt.service
 93879f112313d95b9f2f1b4169c958cf  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/systemd/system/glitch-mint-logo-start.service
-432def7c59a4f912322d86b8a8c36057  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/systemd/system/glitch-mint-logo-poweroff.service
 2e2158fb85be113bcb80e270b9a96a07  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/systemd/system/glitch-mint-logo-stop.service
+432def7c59a4f912322d86b8a8c36057  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/systemd/system/glitch-mint-logo-poweroff.service
 ea24a7062ad1e6d9051f4816b0a22a8a  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/glitch-mint-logo/logo.png
-3d0663fc1631abe9fade5da8bca06b42  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/glitch-mint-logo/config
+dc7753c8773a6969f346ac10bca7c466  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/glitch-mint-logo/config
+06d3a6ad2a23106992e35237e0c2bf72  /home/winch/0x590/programming/c/glitch-mint-logo/deb/lib/libgml-wave.so
+17200d381fc5e093fc24fa1d5ae9ea63  /home/winch/0x590/programming/c/glitch-mint-logo/deb/lib/libgml-matrix.so
+01c72a3a599ca4492c631a5f4f812b61  /home/winch/0x590/programming/c/glitch-mint-logo/deb/lib/libgml-logo.so
 d3e281ca75369e8517b3910bc46a7ed0  /home/winch/0x590/programming/c/glitch-mint-logo/deb/etc/glitch-mint-logo/UbuntuMono-Bold.ttf
-a3a4246307a63677df8b37f939ab0d82  /home/winch/0x590/programming/c/glitch-mint-logo/deb/lib/libgml-wave.so
-5a18ef4cc82fa16c943022be4385d179  /home/winch/0x590/programming/c/glitch-mint-logo/deb/lib/libgml-logo.so

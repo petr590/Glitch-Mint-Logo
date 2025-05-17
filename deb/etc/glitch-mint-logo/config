@@ -1,4 +1,7 @@
-module = "libgml-logo.so"
-logo_path = "/etc/glitch-mint-logo/logo.png";
-font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";
-dev_path  = "/dev/dri/card0";
+dev_path = "/dev/dri/card0";
+module = "libgml-matrix.so";
+
+mint_logo__logo_path = "/etc/glitch-mint-logo/logo.png";
+mint_logo__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";
+
+matrix__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";

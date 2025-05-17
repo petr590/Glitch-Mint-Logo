@@ -1,4 +1,6 @@
 #include "drm_fb.h"
+#include "util/util.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -6,8 +8,12 @@
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include <signal.h>
-#include <time.h>
+#include <math.h>
 #include <errno.h>
+
+#include <time.h>
+#include <unistd.h>
+#include <sys/times.h>
 
 #include <xf86drm.h>
 #include <xf86drmMode.h>
@@ -18,6 +24,8 @@
 
 
 // ---------------------------------------- dynamic module ----------------------------------------
+
+double fps = 0;
 
 static const char *module_filename;
 static void (*read_config)(config_t*);
@@ -43,16 +51,16 @@ static void load_module(void) {
 	void* handle = dlopen(module_filename, RTLD_LAZY);
 
 	if (!handle) {
-		fprintf(stderr, "Cannot load dynamic library: %s\n", module_filename, dlerror());
+		fprintf(stderr, "Cannot load dynamic library %s: %s\n", module_filename, dlerror());
 		exit(EXIT_FAILURE);
 	}
 
-	read_config        = load_sym(handle, "glspl_read_config");
-	setup              = load_sym(handle, "glspl_setup");
-	setup_after_drm    = load_sym(handle, "glspl_setup_after_drm");
-	cleanup_before_drm = load_sym(handle, "glspl_setup_after_drm");
-	cleanup            = load_sym(handle, "glspl_cleanup");
-	draw               = load_sym(handle, "glspl_draw");
+	read_config        = load_sym(handle, "gml_read_config");
+	setup              = load_sym(handle, "gml_setup");
+	setup_after_drm    = load_sym(handle, "gml_setup_after_drm");
+	cleanup_before_drm = load_sym(handle, "gml_setup_after_drm");
+	cleanup            = load_sym(handle, "gml_cleanup");
+	draw               = load_sym(handle, "gml_draw");
 }
 
 
@@ -70,7 +78,7 @@ static fb_info *fb_info1, *fb_info2;
 static void init_drm(void) {
 	dev_file = open(dev_path, O_RDWR | O_CLOEXEC);
 	if (dev_file < 0) {
-		fprintf(stderr, "Cannot open '%s': %m\n", dev_path);
+		fprintf(stderr, "Cannot open '%s': %s\n", dev_path, strerror(errno));
 		exit(errno);
 	}
 	
@@ -174,6 +182,10 @@ static void read_config_file(void) {
 
 // ----------------------------------------- start, stop ------------------------------------------
 
+static inline double timespec_to_double(struct timespec* time) {
+	return time->tv_sec + time->tv_nsec * 1e-9;
+}
+
 static void start(void) {
 	if (fork()) return;
 
@@ -201,8 +213,15 @@ static void start(void) {
 
 	uint32_t connector_id = resources->connectors[0];
 	const uint32_t crtc_id = resources->crtcs[0];
-	const uint32_t width = connector->modes[0].hdisplay;
-	const uint32_t height = connector->modes[0].vdisplay;
+
+	const drmModeModeInfoPtr mode = &connector->modes[0];
+
+	if (fps == 0) {
+		fps = (double)(mode->clock * 1000) / (mode->htotal * mode->vtotal);
+	}
+	
+	const uint32_t width = mode->hdisplay;
+	const uint32_t height = mode->vdisplay;
 	
 	fb_info1 = create_fb(dev_file, width, height);
 	fb_info2 = create_fb(dev_file, width, height);
@@ -211,9 +230,14 @@ static void start(void) {
 			*fbp2 = fb_info2;
 	
 	setup_after_drm(width, height);
+
+	struct timespec curr;
+	clock_gettime(CLOCK_MONOTONIC, &curr);
+
+	double next_timestamp = timespec_to_double(&curr);
 	
 	for (int tick = 0;; tick++) {
-		clock_t start = clock();
+		next_timestamp += 1 / fps;
 
 		draw(tick, width, height, fbp1->vaddr);
 		drmModeSetCrtc(dev_file, crtc_id, fbp1->fb_id, 0, 0, &connector_id, 1, &connector->modes[0]);
@@ -223,7 +247,8 @@ static void start(void) {
 		fbp1 = fbp2;
 		fbp2 = tmp;
 
-		usleep((1000000 / FPS) - (clock() - start) * 1000000 / CLOCKS_PER_SEC);
+		clock_gettime(CLOCK_MONOTONIC, &curr);
+		usleep(1e6 * f64max(0, next_timestamp - timespec_to_double(&curr)));
 	}
 }
 
@@ -244,7 +269,6 @@ static void stop(void) {
 
 	kill(pid, SIGTERM);
 }
-
 
 int main(int argc, const char* argv[]) {
 	parse_args(argc, argv);

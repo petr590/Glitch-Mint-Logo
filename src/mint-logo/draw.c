@@ -1,8 +1,10 @@
 #include "module.h"
+#include "../util/render_glyth.h"
+#include "../util/random.h"
+#include "../util/util.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <libpng/png.h>
 
 #include <assert.h>
 
@@ -27,35 +29,8 @@
 #define MINOR_GLITCH_CHANCE 0.2f
 
 // Диапазон печатаемых символов ASCII
-#define CHAR_START 0x20
-#define CHAR_END   0x80
-#define CHARS (CHAR_END - CHAR_START)
 #define TEXT_COLOR 0x87CF3E
 #define TEXT_PADDING 10
-
-static inline uint32_t u32min(uint32_t num1, uint32_t num2) {
-	return num1 < num2 ? num1 : num2;
-}
-
-static inline int32_t i32max(int32_t num1, int32_t num2) {
-	return num1 > num2 ? num1 : num2;
-}
-
-/** Возвращает рандомное число между from и to включительно.
- * Если to < from, то возвращает from. */
-static inline int randrange(int from, int to) {
-	return to < from ? from : rand() % (to - from + 1) + from;
-}
-
-/** Возвращает a или b случайно, с вероятностью 50/50. */
-static inline int randchoose(int a, int b) {
-	return (rand() & 0x1) ? a : b;
-}
-
-/** Возвращает 1 с вероятностью chance, иначе 0. */
-static inline float chance(float chance) {
-	return (float) rand() / RAND_MAX < chance;
-}
 
 /** Изменяет сид на указанный, умноженный на RANDOM_CONSTANT. Возвращает старый сид. */
 static inline int chseed(int seed) {
@@ -79,15 +54,6 @@ static inline int randrange_seed(int from, int to, int seed) {
  * Таким образом, одинаковые входные данные функции дают одинаковый результат (в одном запуске программы). */
 static inline int tick_remainder(int tick, int period) {
 	return (tick + randrange_seed(0, period - 1, tick / period)) % period;
-}
-
-/** Накладывает второй цвет на первый, учитывая его прозрачность. */
-static inline color_t mix(color_t rgb, color_t argb) {
-	uint8_t alpha = argb >> 24;
-	uint8_t r = ((uint8_t)(rgb >> 16) * (0xFF - alpha) + (uint8_t)(argb >> 16) * alpha) / 0xFF;
-	uint8_t g = ((uint8_t)(rgb >>  8) * (0xFF - alpha) + (uint8_t)(argb >>  8) * alpha) / 0xFF;
-	uint8_t b = ((uint8_t)(rgb      ) * (0xFF - alpha) + (uint8_t)(argb      ) * alpha) / 0xFF;
-	return r << 16 | g << 8 | b;
 }
 
 
@@ -187,42 +153,7 @@ static void draw_logo(int tick, uint32_t width, uint32_t height, uint8_t* frame)
 }
 
 
-typedef struct {
-	uint32_t width, height;
-	uint8_t* buffer;
-} glyth_t;
-
-
-static void render_glyth(glyth_t glyths[CHARS], char ch) {
-	glyth_t* glyth = &glyths[ch - CHAR_START];
-	if (glyth->buffer) return;
-
-	const FT_UInt glyph_index = FT_Get_Char_Index(face, ch);
-	FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
-	FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
-
-	FT_Bitmap* bitmap = &face->glyph->bitmap;
-
-	glyth->width = bitmap->width;
-	glyth->height = bitmap->rows;
-	uint32_t size = glyth->width * glyth->height;
-
-	glyth->buffer = malloc(size);
-	memcpy(glyth->buffer, bitmap->buffer, size);
-}
-
-
 static void draw_system_name(int tick, uint32_t width, uint32_t height, color_t* frame) {
-	static glyth_t glyths[CHARS] = {
-		// Первый глиф - пробел
-		{
-			.width = SPACE_WIDTH,
-			.height = 0,
-			.buffer = "", // Пустой буфер, но не NULL
-		},
-		// Всё остальное заполняется нулями
-	};
-
 	const uint32_t img_height = png_get_image_height(png_ptr, info_ptr);
 	const uint32_t namelen = strlen(system_name);
 	const uint32_t len = u32min(namelen, tick + 1);
@@ -238,8 +169,8 @@ static void draw_system_name(int tick, uint32_t width, uint32_t height, color_t*
 	for (uint32_t i = 0; i < len; i++) {
 		const char ch = text_buf[i];
 		if (ch < CHAR_START || ch >= CHAR_END) continue;
-		render_glyth(glyths, ch);
-		str_width += glyths[ch - CHAR_START].width;
+		
+		str_width += render_glyth(ch, face)->width;
 	}
 
 	uint32_t sx = (width - str_width) / 2;
@@ -251,7 +182,7 @@ static void draw_system_name(int tick, uint32_t width, uint32_t height, color_t*
 
 	for (uint32_t i = 0; i < len; i++) {
 		const char ch = text_buf[i];
-		const glyth_t* glyth = &glyths[ch - CHAR_START];
+		const glyth_t* glyth = render_glyth(ch, face);
 
 		const uint32_t glyth_w = glyth->width;
 		const uint32_t glyth_h = glyth->height;
@@ -269,12 +200,12 @@ static void draw_system_name(int tick, uint32_t width, uint32_t height, color_t*
 			}
 		}
 
-		sx += glyth->width;
+		sx += glyth_w;
 	}
 }
 
 
-void glspl_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
+void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 	draw_bg(tick, width, height, (uint8_t*) frame);
 	draw_logo(tick, width, height, (uint8_t*) frame);
 

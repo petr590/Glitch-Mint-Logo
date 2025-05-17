@@ -1,4 +1,5 @@
-.vscode/
-build/
-boot-logo-test
+/.vscode/
+/build/
+/deb/bin/glitch-mint-logo
+/deb/lib/*.so
 *.deb

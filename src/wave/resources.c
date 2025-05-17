@@ -1,11 +1,23 @@
 #include "module.h"
+#include <stdlib.h>
+#include <time.h>
 
-void glspl_read_config(config_t* cfgp) {}
+float *randbuf1, *randbuf2;
 
-void glspl_setup(void) {}
+void gml_read_config(config_t* cfgp) {}
 
-void glspl_setup_after_drm(uint32_t width, uint32_t height) {}
+void gml_setup(void) {
+	srand(time(NULL));
+}
 
-void glspl_cleanup_before_drm(void) {}
+void gml_setup_after_drm(uint32_t width, uint32_t height) {
+	randbuf1 = aligned_alloc(sizeof(float), (width + 1) * sizeof(float));
+	randbuf2 = aligned_alloc(sizeof(float), width * sizeof(float));
+}
 
-void glspl_cleanup(void) {}
+void gml_cleanup_before_drm(void) {
+	if (randbuf2) { free(randbuf2); randbuf2 = NULL; }
+	if (randbuf1) { free(randbuf1); randbuf1 = NULL; }
+}
+
+void gml_cleanup(void) {}
