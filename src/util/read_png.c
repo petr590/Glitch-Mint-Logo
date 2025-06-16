@@ -1,5 +1,7 @@
 #include "read_png.h"
 #include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 #include <errno.h>
 
 #define PNG_HEADER_LEN 8
@@ -13,7 +15,7 @@ static void print_error_and_exit(FILE* fp, const char* filename) {
 void read_png(const char* filename, png_structp* res_png_ptr, png_infop* res_info_ptr, png_infop* res_end_info) {
 	FILE* fp = fopen(filename, "rb");
 	if (!fp) {
-		fprintf(stderr, "Cannot open file '%s': %m\n", filename);
+		fprintf(stderr, "Cannot open file '%s': %s\n", filename, strerror(errno));
 		exit(errno);
 	}
 
@@ -48,7 +50,16 @@ void read_png(const char* filename, png_structp* res_png_ptr, png_infop* res_inf
 	png_init_io(png_ptr, fp);
 	png_set_sig_bytes(png_ptr, PNG_HEADER_LEN);
 
-	png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_STRIP_16 | PNG_TRANSFORM_BGR, NULL);
+
+	png_set_palette_to_rgb(png_ptr);
+	png_set_tRNS_to_alpha(png_ptr);
+	png_set_filler(png_ptr, 0xFF, PNG_FILLER_BEFORE);
+
+	png_read_png(png_ptr, info_ptr,
+			PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_STRIP_16 |
+			PNG_TRANSFORM_GRAY_TO_RGB | PNG_TRANSFORM_BGR,
+			NULL);
+
 	fclose(fp);
 
 	*res_png_ptr = png_ptr;

@@ -5,4 +5,4 @@ else
 	time=10
 fi
 
-sudo ./build/glitch-mint-logo && sleep "$time" && sudo ./build/glitch-mint-logo --stop
+sudo ./build/glitch-mint-logo --config build/config && sleep "$time" && sudo ./build/glitch-mint-logo --config build/config --stop

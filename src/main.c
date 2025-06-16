@@ -127,14 +127,26 @@ static void on_signal(int sig) {
 // ----------------------------------------- args, config -----------------------------------------
 
 static enum { START, STOP } action = START;
+static const char* config_file = CONFIG_FILE;
+
+static void print_usage_and_exit(const char* argv[]) {
+	fprintf(stderr, "Usage: %s [--stop]\n", argv[0]);
+	exit(EINVAL);
+}
 
 static void parse_args(int argc, const char* argv[]) {
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "--stop") == 0) {
 			action = STOP;
+
+		} else if (strcmp(argv[i], "--config") == 0) {
+			if (++i >= argc)
+				print_usage_and_exit(argv);
+
+			config_file = argv[i];
+
 		} else {
-			fprintf(stderr, "Usage: %s [--stop]\n", argv[0]);
-			exit(EINVAL);
+			print_usage_and_exit(argv);
 		}
 	}
 }
@@ -164,7 +176,7 @@ static void read_config_file(void) {
 	config_t cfg; 
 	config_init(&cfg);
 
-	if (!config_read_file(&cfg, CONFIG_FILE)) {
+	if (!config_read_file(&cfg, config_file)) {
 		fprintf(stderr, "Cannot load config: %s:%d - %s\n", config_error_file(&cfg), config_error_line(&cfg), config_error_text(&cfg));
 		config_destroy(&cfg);
 		exit(EXIT_FAILURE);
@@ -186,6 +198,18 @@ static inline double timespec_to_double(struct timespec* time) {
 	return time->tv_sec + time->tv_nsec * 1e-9;
 }
 
+
+static double fps_sum = 0;
+static double min_fps = INFINITY;
+static double max_fps = 0;
+static int tick = 0;
+
+static void print_fps(void) {
+	printf("Average FPS = %.1f\n", fps_sum / tick);
+	printf("Min FPS = %.1f\n", min_fps);
+	printf("Max FPS = %.1f\n", max_fps);
+}
+
 static void start(void) {
 	if (fork()) return;
 
@@ -195,6 +219,7 @@ static void start(void) {
 	signal(SIGSEGV, on_signal);
 	signal(SIGTERM, on_signal);
 	atexit(release_all);
+	atexit(print_fps);
 	
 	create_dirs(PID_FILE);
 	
@@ -233,11 +258,13 @@ static void start(void) {
 
 	struct timespec curr;
 	clock_gettime(CLOCK_MONOTONIC, &curr);
-
 	double next_timestamp = timespec_to_double(&curr);
 	
-	for (int tick = 0;; tick++) {
-		next_timestamp += 1 / fps;
+	const double frame_time = 1 / fps;
+	
+	for (;;) {
+		clock_gettime(CLOCK_MONOTONIC, &curr);
+		next_timestamp = timespec_to_double(&curr) + frame_time;
 
 		draw(tick, width, height, fbp1->vaddr);
 		drmModeSetCrtc(dev_file, crtc_id, fbp1->fb_id, 0, 0, &connector_id, 1, &connector->modes[0]);
@@ -248,7 +275,16 @@ static void start(void) {
 		fbp2 = tmp;
 
 		clock_gettime(CLOCK_MONOTONIC, &curr);
-		usleep(1e6 * f64max(0, next_timestamp - timespec_to_double(&curr)));
+		double diff = next_timestamp - timespec_to_double(&curr);
+		usleep(1e6 * f64max(0, diff));
+
+		double cur_fps = frame_time / (frame_time - diff) * fps;
+		// printf("FPS = %.1f\n", cur_fps);
+
+		fps_sum += cur_fps;
+		min_fps = f64min(min_fps, cur_fps);
+		max_fps = f64max(max_fps, cur_fps);
+		tick++;
 	}
 }
 

@@ -21,6 +21,12 @@ static inline double f64max(double num1, double num2) {
 			num1 > num2 ? num1 : num2;
 }
 
+static inline double f64min(double num1, double num2) {
+	return  num1 != num1 ? num1 : // nan
+			num2 != num2 ? num2 : // nan
+			num1 < num2 ? num1 : num2;
+}
+
 /** Накладывает второй цвет на первый, учитывая его прозрачность. */
 static inline color_t mix(color_t rgb, color_t argb) {
 	uint8_t alpha = argb >> 24;

@@ -5,6 +5,7 @@
 #include "module.h"
 #include "../util/read_png.h"
 #include "../util/render_glyth.h"
+#include "../util/get_system_name.h"
 #include <time.h>
 
 static const char *logo_path, *font_path;
@@ -19,30 +20,9 @@ color_t* bg_buffer;
 void gml_read_config(config_t* cfgp) {
 	logo_path = read_config_str(cfgp, "mint_logo__logo_path");
 	font_path = read_config_str(cfgp, "mint_logo__font_path");
-	printf("%s\n", font_path);
 }
 
 // --------------------------------------------- setup --------------------------------------------
-
-static const char* get_system_name(void) {
-	FILE* fp = popen("lsb_release -sd", "r");
-
-	if (!fp) {
-		perror("Cannot execute `lsb_release -sd`");
-		return "";
-	}
-
-	static char name[64];
-	fgets(name, sizeof(name), fp);
-	pclose(fp);
-
-	char* end = strchr(name, '\n');
-	if (end) {
-		end[0] = '\0';
-	}
-	
-	return name;
-}
 
 
 static FT_Library freeType;
