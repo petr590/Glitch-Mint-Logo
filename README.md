@@ -52,4 +52,4 @@ sudo apt install ./<название пакета>.deb
 Конфиг распложен по пути **/etc/glitch-mint-logo/config**. Его натройки:
 - **dev_path** - путь к файлу для сообщения с libdrm. По умолчанию **/dev/dri/card0**
 - **module** - название модуля. Все модули ищутся в папке /lib и начинаются с префикса _libgml-_
-- Настройки, специфичные для модулей (например, **mint\_logo__logo_path** - настройка модуля **libgml-mint-logo.so**)
+- Настройки, специфичные для модулей (например, **mint_logo__logo_path** и **mint_logo__font_path** - настройки модуля **libgml-mint-logo.so**)

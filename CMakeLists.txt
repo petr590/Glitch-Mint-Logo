@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.3)
-project(GlitchMintLogo VERSION 1.5.0 LANGUAGES C)
+project(GlitchMintLogo VERSION 1.5.1 LANGUAGES C)
 
 include_directories(/usr/include/drm /usr/include/freetype2)
 
@@ -34,7 +34,7 @@ target_link_libraries(glitch-mint-logo drm config dl)
 # libgml-logo.so
 
 add_library(
-	gml-logo SHARED
+	gml-mint-logo SHARED
 	src/common.c
 	src/gml-mint-logo/resources.c
 	src/gml-mint-logo/draw.c
@@ -42,7 +42,7 @@ add_library(
 	src/util/render_glyph.c
 )
 
-target_link_libraries(gml-logo png freetype)
+target_link_libraries(gml-mint-logo png freetype)
 
 
 # libgml-matrix.so
