@@ -1,4 +1,5 @@
 #include "drm_fb.h"
+#include "metric.h"
 #include "util/util.h"
 
 #include <stdlib.h>
@@ -194,20 +195,22 @@ static void read_config_file(void) {
 
 // ----------------------------------------- start, stop ------------------------------------------
 
-static inline double timespec_to_double(struct timespec* time) {
-	return time->tv_sec + time->tv_nsec * 1e-9;
+static double get_time_in_secs(void) {
+	struct timespec time;
+	clock_gettime(CLOCK_MONOTONIC, &time);
+	return time.tv_sec + time.tv_nsec * 1e-9;
 }
 
 
-static double fps_sum = 0;
-static double min_fps = INFINITY;
-static double max_fps = 0;
-static int tick = 0;
 
-static void print_fps(void) {
-	printf("Average FPS = %.1f\n", fps_sum / tick);
-	printf("Min FPS = %.1f\n", min_fps);
-	printf("Max FPS = %.1f\n", max_fps);
+static metric_t fps_metric, draw_time_metric, drm_time_metric;
+
+static void print_staticstics(void) {
+	metric_print(&fps_metric);
+	printf("\n");
+	metric_print(&draw_time_metric);
+	printf("\n");
+	metric_print(&drm_time_metric);
 }
 
 static void start(void) {
@@ -219,7 +222,7 @@ static void start(void) {
 	signal(SIGSEGV, on_signal);
 	signal(SIGTERM, on_signal);
 	atexit(release_all);
-	atexit(print_fps);
+	atexit(print_staticstics);
 	
 	create_dirs(PID_FILE);
 	
@@ -251,40 +254,40 @@ static void start(void) {
 	fb_info1 = create_fb(dev_file, width, height);
 	fb_info2 = create_fb(dev_file, width, height);
 	
-	fb_info *fbp1 = fb_info1,
-			*fbp2 = fb_info2;
+	const fb_info* fbp1 = fb_info1;
+	const fb_info* fbp2 = fb_info2;
 	
 	setup_after_drm(width, height);
 
-	struct timespec curr;
-	clock_gettime(CLOCK_MONOTONIC, &curr);
-	double next_timestamp = timespec_to_double(&curr);
-	
+	metric_init(&fps_metric, "FPS", "");
+	metric_init(&draw_time_metric, "draw time", "ms");
+	metric_init(&drm_time_metric, "drm time", "ms");
+
 	const double frame_time = 1 / fps;
 	
-	for (;;) {
-		clock_gettime(CLOCK_MONOTONIC, &curr);
-		next_timestamp = timespec_to_double(&curr) + frame_time;
+	for (int tick = 0;; tick++) {
+		double start = get_time_in_secs();
 
 		draw(tick, width, height, fbp1->vaddr);
+
+		double draw_end = get_time_in_secs();
+
 		drmModeSetCrtc(dev_file, crtc_id, fbp1->fb_id, 0, 0, &connector_id, 1, &connector->modes[0]);
 
+		double drm_end = get_time_in_secs();
+
 		// Swap buffers
-		fb_info *tmp = fbp1;
+		fb_info* tmp = fbp1;
 		fbp1 = fbp2;
 		fbp2 = tmp;
 
-		clock_gettime(CLOCK_MONOTONIC, &curr);
-		double diff = next_timestamp - timespec_to_double(&curr);
-		usleep(1e6 * f64max(0, diff));
+		metric_add(&draw_time_metric, (draw_end - start) * 1000);
+		metric_add(&drm_time_metric,  (drm_end - draw_end) * 1000);
 
-		double cur_fps = frame_time / (frame_time - diff) * fps;
-		// printf("FPS = %.1f\n", cur_fps);
+		double elapsed = get_time_in_secs() - start;
+		metric_add(&fps_metric, 1 / elapsed);
 
-		fps_sum += cur_fps;
-		min_fps = f64min(min_fps, cur_fps);
-		max_fps = f64max(max_fps, cur_fps);
-		tick++;
+		usleep(1e6 * f64max(0, frame_time - elapsed));
 	}
 }
 

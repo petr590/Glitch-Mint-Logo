@@ -12,6 +12,11 @@ Glitch Mint Logo - это утилита для отображения лого 
 - libconfig9 (>= 1.5-0.4)
 
 ## Сборка
+Установите библиотеки при необходимости:
+```sh
+sudo apt-get install libconfig-dev libpng-dev libfreetype6-dev
+```
+
 Скомпилируйте исполняемый файл:
 ```sh
 mkdir build/
@@ -44,7 +49,7 @@ sudo apt install ./<название пакета>.deb
 `sudo update-grub`
 
 ## Конфиг
-Конфиг распложен по пути /etc/glitch-mint-logo/config. Его натройки:
-- dev_path - путь к файлу для сообщения с libdrm. По умолчанию /dev/dri/card0
-- module - название модуля. Все модули ищутся в папке /lib и начинаются с префикса "libgml-"
-- Настройки, специфичные для модулей (например, mint\_logo__logo_path - настройка модуля libgml-mint-logo.so)
+Конфиг распложен по пути **/etc/glitch-mint-logo/config**. Его натройки:
+- **dev_path** - путь к файлу для сообщения с libdrm. По умолчанию **/dev/dri/card0**
+- **module** - название модуля. Все модули ищутся в папке /lib и начинаются с префикса _libgml-_
+- Настройки, специфичные для модулей (например, **mint\_logo__logo_path** - настройка модуля **libgml-mint-logo.so**)

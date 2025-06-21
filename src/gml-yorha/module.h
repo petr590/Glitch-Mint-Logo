@@ -1,22 +1,37 @@
 /**
  * Заголовок модуля. Содержит объявления функций, которые реализует модуль.
  */
-#ifndef GML_MINT_LOGO_MODULE_H
-#define GML_MINT_LOGO_MODULE_H
+#ifndef GML_YORHA_MODULE_H
+#define GML_YORHA_MODULE_H
 
 #include "../common.h"
+#include "../util/bitset2d.h"
 #include <libpng/png.h>
+#include <systemd/sd-bus.h>
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 
-#define FPS 8
+#define PIXEL_SIZE 8
+#define RUNNING_STRINGS 2
 
-extern int RANDOM_CONSTANT;
-extern const char* system_name;
 extern png_structp png_ptr;
 extern png_infop info_ptr, end_info;
 extern FT_Face face;
-extern color_t* bg_buffer; // Буфер размером height
+
+extern bitset2d v_bg_buffer; // Буфер вертикальных линий,   размер = width * height
+extern bitset2d h_bg_buffer; // Буфер горизонтальных линий, размер = width * height
+extern bitset2d p_bg_buffer; // Буфер точек,                размер = width * height
+
+
+typedef struct running_str {
+    const char* str;
+    int printed;
+} running_str_t;
+
+extern running_str_t running_strings[RUNNING_STRINGS];
+extern size_t running_strings_len;
+
+extern sd_bus* bus_ptr;
 
 // Следующие функции вызываются в том порядке, в котором объявлены
 
@@ -25,7 +40,11 @@ void gml_read_config(config_t*);
 /** Загружает и инициализирует ресурсы модуля */
 void gml_setup(void);
 
-/** Загружает и инициализирует ресурсы модуля после загрузки libdrm */
+/**
+ * Загружает и инициализирует ресурсы модуля после загрузки libdrm.
+ * @param width - ширина экрана.
+ * @param height - высота экрана.
+ */
 void gml_setup_after_drm(uint32_t width, uint32_t height);
 
 
@@ -39,10 +58,10 @@ void gml_setup_after_drm(uint32_t width, uint32_t height);
 void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame);
 
 
-/** Освобождает ресурсы модуля перед освобождением ресурсов libdrm */
+/** Освобождает ресурсы модуля перед освобождением ресурсов libdrm. */
 void gml_cleanup_before_drm(void);
 
-/** Освобождает ресурсы модуля */
+/** Освобождает ресурсы модуля. */
 void gml_cleanup(void);
 
 #endif

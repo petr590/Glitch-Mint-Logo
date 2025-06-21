@@ -1,5 +1,5 @@
 #include "module.h"
-#include "../util/render_glyth.h"
+#include "../util/render_glyph.h"
 #include "../util/random.h"
 #include "../util/util.h"
 #include <stdint.h>
@@ -170,37 +170,36 @@ static void draw_system_name(int tick, uint32_t width, uint32_t height, color_t*
 		const char ch = text_buf[i];
 		if (ch < CHAR_START || ch >= CHAR_END) continue;
 		
-		str_width += render_glyth(ch, face)->width;
+		str_width += render_glyph(ch, face)->width;
 	}
 
 	uint32_t sx = (width - str_width) / 2;
-	uint32_t ey = (height + img_height) / 2 + TEXT_PADDING + GLYTH_HEIGHT;
+	uint32_t baseline = (height + img_height) / 2 + TEXT_PADDING + GLYPH_HEIGHT;
 
-	const uint32_t minor_y = randrange(0, GLYTH_HEIGHT);
+	const uint32_t minor_y = randrange(0, GLYPH_HEIGHT);
 	const int amplitude = MINOR_GLITCH_AMPLITUDE * get_minor_noise(tick);
 	const int sign = chance(MINOR_GLITCH_CHANCE) ? randchoose(-1, 1) : 0;
 
 	for (uint32_t i = 0; i < len; i++) {
 		const char ch = text_buf[i];
-		const glyth_t* glyth = render_glyth(ch, face);
+		const glyph_t* glyph = render_glyph(ch, face);
 
-		const uint32_t glyth_w = glyth->width;
-		const uint32_t glyth_h = glyth->height;
-		const uint8_t* buffer = glyth->buffer;
-		const uint32_t sy = ey - glyth_h;
+		const uint8_t* buffer  = glyph->buffer;
+		const uint32_t glyph_w = glyph->width;
+		const uint32_t glyph_h = glyph->height;
 
-		for (uint32_t y = 0; y < glyth_h; y++) {
-			for (uint32_t x = 0; x < glyth_w; x++) {
-				int32_t tx = x + sx + i32max(0, amplitude - abs(y - minor_y)) * sign;
+		for (uint32_t y = 0; y < glyph_h; y++) {
+			for (uint32_t x = 0; x < glyph_w; x++) {
+				int32_t tx = x + sx + glyph->left + i32max(0, amplitude - abs(y - minor_y)) * sign;
 
 				if (tx >= 0 && tx < width) {
-					uint8_t alpha = buffer[y * glyth_w + x];
-					frame[(y + sy) * width + tx] = mix(bg_buffer[y], alpha << 24 | TEXT_COLOR);
+					uint8_t alpha = buffer[y * glyph_w + x];
+					frame[(baseline - glyph->top + y) * width + tx] = mix(bg_buffer[y], alpha << 24 | TEXT_COLOR);
 				}
 			}
 		}
 
-		sx += glyth_w;
+		sx += glyph->advance_x;
 	}
 }
 

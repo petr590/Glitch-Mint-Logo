@@ -1,9 +1,12 @@
 dev_path = "/dev/dri/card0";
-module = "libgml-katana.so";
+module = "libgml-yorha.so";
 
 mint_logo__logo_path = "/etc/glitch-mint-logo/logo.png";
 mint_logo__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";
 
 matrix__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";
 
-katana__logo_path = "/etc/glitch-mint-logo/logo_pixelart.png";
+pixels__logo_path = "/etc/glitch-mint-logo/logo_pixelart.png";
+
+yorha__logo_path = "/etc/glitch-mint-logo/YoRHa_logo.png";
+yorha__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";

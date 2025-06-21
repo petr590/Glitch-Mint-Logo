@@ -2,6 +2,7 @@
 set -e
 
 make_link() {
+	mkdir -p "$(dirname "$2")"
 	ln -f "$1" "$2"
 	echo "Created hardlink $2 --> $1"
 }
@@ -22,5 +23,6 @@ architecture="$(sed -nE 's/^Architecture:\s*(.*)$/\1/p' ./deb/DEBIAN/control)"
 
 fakeroot dpkg-deb --build ./deb
 
-mv deb.deb "${package}_${version}_${architecture}.deb"
-echo "deb.deb moved to ${package}_${version}_${architecture}.deb"
+deb_file="${package}_${version}_${architecture}.deb"
+mv deb.deb "$deb_file"
+echo "'./deb.deb' moved to './$deb_file'"

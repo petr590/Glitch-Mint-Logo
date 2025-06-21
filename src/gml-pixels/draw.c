@@ -5,17 +5,17 @@
 #include "module.h"
 #include "../util/random.h"
 #include "../util/util.h"
-#include <string.h>
 
 #ifndef __USE_MISC
 #define __USE_MISC // Для того, чтобы VS Code увидел константы M_PI и др.
 #endif
 #include <math.h>
+#include <string.h>
 
 #include <assert.h>
 
-#define BG_GS      0x33
-#define BACKGROUND (BG_GS << 16 | BG_GS << 8 | BG_GS)
+#define BACKGROUND_GS 0x33
+#define BACKGROUND (BACKGROUND_GS << 16 | BACKGROUND_GS << 8 | BACKGROUND_GS)
 #define FOREGROUND 0xCCCCCC
 #define SHADOW     0x020202
 #define SHADOW_WIDTH 2
@@ -66,7 +66,7 @@ static int is_set(
 		abs(width - 2*x) < img_w &&
 		abs(height - 2*y) < img_h) {
 		
-		color_t **img_rows = (color_t**) png_get_rows(png_ptr, info_ptr);
+		color_t** img_rows = (color_t**) png_get_rows(png_ptr, info_ptr);
 		uint32_t u = x - (width - img_w) / 2;
 		uint32_t v = y - (height - img_h) / 2;
 
@@ -80,28 +80,18 @@ static int is_set(
 }
 
 
-static void buffer_set_1(uint32_t x, uint32_t y, uint32_t width) {
-	size_t index = y * width + x;
-	buffer[index >> 3] |= (1 << (index & 0x7));
-}
-
-static int buffer_get(uint32_t x, uint32_t y, uint32_t width) {
-	size_t index = y * width + x;
-	return (buffer[index >> 3] >> (index & 0x7)) & 0x1;
-}
-
 static int buffer_get_scaled(uint32_t x, uint32_t y, uint32_t width) {
-	return buffer_get(x / PIXEL_SIZE, y / PIXEL_SIZE, width / PIXEL_SIZE);
+	return bitset2d_get(&buffer, x / PIXEL_SIZE, y / PIXEL_SIZE);
 }
 
-void fill_buffer(int tick, uint32_t width, uint32_t height) {
+static void fill_buffer(int tick, uint32_t width, uint32_t height) {
 	const float max_angle = fminf(M_PI_2 + FADE_ANGLE, tick * ANGLE_PER_TICK);
 	const float min_angle = fmaxf(0, max_angle - FADE_ANGLE);
 
 	const float min_tg = min_angle >= M_PI_2 ? INFINITY : tanf(min_angle);
 	const float max_tg = max_angle >= M_PI_2 ? INFINITY : tanf(max_angle);
 
-	memset(buffer, 0, buffer_size);
+	bitset2d_clear(&buffer);
 
 	const uint32_t w = width / PIXEL_SIZE;
 	const uint32_t h = height / PIXEL_SIZE;
@@ -111,7 +101,7 @@ void fill_buffer(int tick, uint32_t width, uint32_t height) {
 			int res = is_set(x, y, w, h, max_angle, min_tg, max_tg);
 
 			if (res) {
-				buffer_set_1(x, y, w);
+				bitset2d_set_1(&buffer, x, y);
 			}
 		}
 	}
@@ -119,7 +109,7 @@ void fill_buffer(int tick, uint32_t width, uint32_t height) {
 
 void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 	fill_buffer(tick, width, height);
-	memset(frame, BG_GS, width * height * sizeof(color_t));
+	memset(frame, BACKGROUND_GS, width * height * sizeof(color_t));
 
 	for (uint32_t y = 0; y < height; y++) {
 		for (uint32_t x = 0; x < width; x++) {

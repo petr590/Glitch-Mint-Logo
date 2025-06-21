@@ -39,7 +39,7 @@ add_library(
 	src/gml-mint-logo/resources.c
 	src/gml-mint-logo/draw.c
 	src/util/read_png.c
-	src/util/render_glyth.c
+	src/util/render_glyph.c
 )
 
 target_link_libraries(gml-logo png freetype)
@@ -52,7 +52,7 @@ add_library(
 	src/common.c
 	src/gml-matrix/resources.c
 	src/gml-matrix/draw.c
-	src/util/render_glyth.c
+	src/util/render_glyph.c
 )
 
 target_link_libraries(gml-matrix png freetype)
@@ -70,14 +70,44 @@ add_library(
 target_link_libraries(gml-wave m)
 
 
-# libgml-katana.so
+# libgml-processor.so
 
 add_library(
-	gml-katana SHARED
+	gml-processor SHARED
 	src/common.c
-	src/gml-katana/resources.c
-	src/gml-katana/draw.c
+	src/gml-processor/resources.c
+	src/gml-processor/draw.c
 	src/util/read_png.c
+	src/util/bitset2d.c
 )
 
-target_link_libraries(gml-katana m png)
+target_link_libraries(gml-processor m png)
+
+
+# libgml-pixels.so
+
+add_library(
+	gml-pixels SHARED
+	src/common.c
+	src/gml-pixels/resources.c
+	src/gml-pixels/draw.c
+	src/util/read_png.c
+	src/util/bitset2d.c
+)
+
+target_link_libraries(gml-pixels m png)
+
+
+# libgml-yorha.so
+
+add_library(
+	gml-yorha SHARED
+	src/common.c
+	src/gml-yorha/resources.c
+	src/gml-yorha/draw.c
+	src/util/bitset2d.c
+	src/util/read_png.c
+	src/util/render_glyph.c
+)
+
+target_link_libraries(gml-yorha m png freetype systemd)

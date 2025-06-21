@@ -1,5 +1,5 @@
 #include "module.h"
-#include "../util/render_glyth.h"
+#include "../util/render_glyph.h"
 #include "../util/random.h"
 #include "../util/util.h"
 #include <stdint.h>
@@ -13,7 +13,7 @@
 #define FOREGROUND 0x82A4F0
 #define OFFSET_Y 8
 #define TOGGLE_LINE_CHANCE 0.02f
-#define RAND_CHAR_CHANCE 0.1f
+#define RAND_CHAR_CHANCE 0.25f
 
 static inline char random_char(void) {
 	return randrange('\x21', '\x7E');
@@ -29,19 +29,22 @@ void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 			char ch = text_buffer[y * text_w + x];
 
 			if (ch != ' ') {
-				const glyth_t* glyth = render_glyth(ch, face);
+				const glyph_t* glyph = render_glyph(ch, face);
 
-				const int dst_sx = x * CHAR_WIDTH + i32max(0, (CHAR_WIDTH - glyth->width) / 2);
-				const int dst_sy = y * CHAR_HEIGHT + i32max(0, (CHAR_HEIGHT - glyth->height) / 2) - CHAR_HEIGHT + offset_y;
-				const int dst_w = u32min(CHAR_WIDTH, glyth->width);
-				const int dst_h = u32min(CHAR_HEIGHT, glyth->height);
+				const int dst_sx = x * CHAR_WIDTH + glyph->left;
+				const int dst_sy = y * CHAR_HEIGHT - glyph->top + offset_y;
+				const int dst_w = u32min(CHAR_WIDTH, glyph->width);
+				const int dst_h = u32min(CHAR_HEIGHT, glyph->height);
 
 				const int dy_start = -i32min(0, dst_sy);
 
 				for (int dy = dy_start; dy < dst_h && dst_sy + dy < height; dy++) {
 					for (int dx = 0; dx < dst_w && dst_sx + dx < width; dx++) {
-						uint8_t alpha = glyth->buffer[dy * glyth->width + dx];
-						frame[(dst_sy + dy) * width + dst_sx + dx] = mix(BACKGROUND, alpha << 24 | FOREGROUND);
+						uint8_t alpha = glyph->buffer[dy * glyph->width + dx];
+
+						if (alpha > 0) {
+							frame[(dst_sy + dy) * width + dst_sx + dx] = mix(BACKGROUND, alpha << 24 | FOREGROUND);
+						}
 					}
 				}
 			}

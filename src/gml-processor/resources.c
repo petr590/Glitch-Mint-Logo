@@ -3,37 +3,36 @@
  */
 
 #include "module.h"
-#include "../util/read_png.h"
 #include <stdlib.h>
+#include <math.h>
 #include <time.h>
 
 #define FPS 45
 #define FPS_EPSILON 1
 
-static const char* logo_path;
-
-png_structp png_ptr;
-png_infop info_ptr, end_info;
-
-size_t buffer_size;
-uint8_t* buffer;
+bitset2d v_bg_buffer;
+bitset2d h_bg_buffer;
+bitset2d p_bg_buffer;
 
 
-void gml_read_config(config_t* cfgp) {
-	logo_path = read_config_str(cfgp, "katana__logo_path");
-}
+void gml_read_config(config_t* cfgp) {}
 
 // --------------------------------------------- setup --------------------------------------------
 
 void gml_setup(void) {
-	read_png(logo_path, &png_ptr, &info_ptr, &end_info);
+	srand(time(NULL));
 }
 
 void gml_setup_after_drm(uint32_t width, uint32_t height) {
 	uint32_t w = (width + PIXEL_SIZE - 1) / PIXEL_SIZE;
 	uint32_t h = (height + PIXEL_SIZE - 1) / PIXEL_SIZE;
-	buffer_size = (w * h + 7) / 8;
-	buffer = malloc(buffer_size);
+	bitset2d_create(&v_bg_buffer, w, h);
+	bitset2d_create(&h_bg_buffer, w, h);
+	bitset2d_create(&p_bg_buffer, w, h);
+
+	bitset2d_clear(&v_bg_buffer);
+	bitset2d_clear(&h_bg_buffer);
+	bitset2d_clear(&p_bg_buffer);
 
 	if (fabs(FPS - fps) > FPS_EPSILON) {
 		fps = FPS;
@@ -43,9 +42,9 @@ void gml_setup_after_drm(uint32_t width, uint32_t height) {
 // ------------------------------------------- cleanup --------------------------------------------
 
 void gml_cleanup_before_drm(void) {
-	if (buffer) { free(buffer); buffer = NULL; }
+	bitset2d_destroy(&p_bg_buffer);
+	bitset2d_destroy(&h_bg_buffer);
+	bitset2d_destroy(&v_bg_buffer);
 }
 
-void gml_cleanup(void) {
-	if (png_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-}
+void gml_cleanup(void) {}

@@ -16,7 +16,7 @@
  * ../util/random.h - функции для генерации рандома
  * ../util/util.h - удобные функции, такие как u32min, i32max, mix(color_t, color_t)
  * ../util/read_png.h - чтение png файла с помощью библиотеки libpng
- * ../util/render_glyth.h - рендеринг глифа с помощью библиотеки freetype
+ * ../util/render_glyph.h - рендеринг глифа с помощью библиотеки freetype
  * 
  * 
  * Изменение FPS

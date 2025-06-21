@@ -1,14 +1,16 @@
 /**
  * Заголовок модуля. Содержит объявления функций, которые реализует модуль.
  */
+#ifndef GML_MATRIX_MODULE_H
+#define GML_MATRIX_MODULE_H
 
 #include "../common.h"
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 
 #define TEXT_PADDING 0
-#define CHAR_WIDTH (GLYTH_WIDTH + TEXT_PADDING)
-#define CHAR_HEIGHT (GLYTH_HEIGHT + TEXT_PADDING)
+#define CHAR_WIDTH (GLYPH_WIDTH + TEXT_PADDING)
+#define CHAR_HEIGHT (GLYPH_HEIGHT + TEXT_PADDING)
 
 extern FT_Face face;
 extern int text_w, text_h;
@@ -40,3 +42,5 @@ void gml_cleanup_before_drm(void);
 
 /** Освобождает ресурсы модуля */
 void gml_cleanup(void);
+
+#endif

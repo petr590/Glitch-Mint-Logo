@@ -1,17 +1,17 @@
 /**
  * Заголовок модуля. Содержит объявления функций, которые реализует модуль.
  */
+#ifndef GML_WAVE_PROCESSOR_H
+#define GML_WAVE_PROCESSOR_H
 
 #include "../common.h"
-#include <libpng/png.h>
+#include "../util/bitset2d.h"
 
-#define PIXEL_SIZE 4
+#define PIXEL_SIZE 8
 
-extern png_structp png_ptr;
-extern png_infop info_ptr, end_info;
-
-extern size_t buffer_size;
-extern uint8_t* buffer;
+extern bitset2d v_bg_buffer; // Буфер вертикальных линий,   размер = width * height
+extern bitset2d h_bg_buffer; // Буфер горизонтальных линий, размер = width * height
+extern bitset2d p_bg_buffer; // Буфер точек,                размер = (width + 1) * (height + 1)
 
 // Следующие функции вызываются в том порядке, в котором объявлены
 
@@ -43,3 +43,5 @@ void gml_cleanup_before_drm(void);
 
 /** Освобождает ресурсы модуля. */
 void gml_cleanup(void);
+
+#endif

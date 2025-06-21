@@ -3,7 +3,7 @@
  */
 
 #include "module.h"
-#include "../util/render_glyth.h"
+#include "../util/render_glyph.h"
 #include <time.h>
 
 #define FPS 60
@@ -21,22 +21,22 @@ void gml_read_config(config_t* cfgp) {
 
 // --------------------------------------------- setup --------------------------------------------
 
-static FT_Library freeType;
+static FT_Library freeTypeLib;
 
 static void init_font_face(void) {
-	FT_Error err = FT_Init_FreeType(&freeType);
+	FT_Error err = FT_Init_FreeType(&freeTypeLib);
 	if (err) {
 		fprintf(stderr, "Cannot initialize FreeType\n");
 		exit(EXIT_FAILURE);
 	}
 
-	err = FT_New_Face(freeType, font_path, 0, &face);
+	err = FT_New_Face(freeTypeLib, font_path, 0, &face);
 	if (err) {
 		fprintf(stderr, "Cannot load font from file '%s'\n", font_path);
 		exit(EXIT_FAILURE);
 	}
 
-	FT_Set_Pixel_Sizes(face, 0, GLYTH_HEIGHT);
+	FT_Set_Pixel_Sizes(face, 0, GLYPH_HEIGHT);
 }
 
 
@@ -66,7 +66,7 @@ void gml_cleanup_before_drm(void) {
 
 void gml_cleanup(void) {
 	if (face) { FT_Done_Face(face); face = NULL; }
-	if (freeType) { FT_Done_FreeType(freeType); freeType = NULL; }
+	if (freeTypeLib) { FT_Done_FreeType(freeTypeLib); freeTypeLib = NULL; }
 
 	if (font_path) { free((void*) font_path); font_path = NULL; }
 }

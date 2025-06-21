@@ -26,3 +26,10 @@
 
 ## Версия 1.5.0
 Добавлена новая анимация libgml-katana.so
+
+## Версия 1.5.1
+Анимация libgml-katana.so переименована в libgml-pixels.so
+Добавлены новые анимации libgml-processor.so, libgml-yorha.so
+Добавлена интеграция с systemd sd-bus для libgml-yorha.so
+Исправлен баг с отображением символов с хвостами (g, y, p, q и др.)
+Добавлена статистика FPS, времени отрисовки и вызова drm

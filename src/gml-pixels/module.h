@@ -1,12 +1,19 @@
 /**
  * Заголовок модуля. Содержит объявления функций, которые реализует модуль.
  */
-#ifndef GML_WAVE_MODULE_H
-#define GML_WAVE_MODULE_H
+#ifndef GML_PIXELS_MODULE_H
+#define GML_PIXELS_MODULE_H
 
 #include "../common.h"
+#include "../util/bitset2d.h"
+#include <libpng/png.h>
 
-extern float *randbuf1, *randbuf2;
+#define PIXEL_SIZE 4
+
+extern png_structp png_ptr;
+extern png_infop info_ptr, end_info;
+
+extern bitset2d buffer;
 
 // Следующие функции вызываются в том порядке, в котором объявлены
 
@@ -15,7 +22,11 @@ void gml_read_config(config_t*);
 /** Загружает и инициализирует ресурсы модуля */
 void gml_setup(void);
 
-/** Загружает и инициализирует ресурсы модуля после загрузки libdrm */
+/**
+ * Загружает и инициализирует ресурсы модуля после загрузки libdrm.
+ * @param width - ширина экрана.
+ * @param height - высота экрана.
+ */
 void gml_setup_after_drm(uint32_t width, uint32_t height);
 
 
@@ -29,10 +40,10 @@ void gml_setup_after_drm(uint32_t width, uint32_t height);
 void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame);
 
 
-/** Освобождает ресурсы модуля перед освобождением ресурсов libdrm */
+/** Освобождает ресурсы модуля перед освобождением ресурсов libdrm. */
 void gml_cleanup_before_drm(void);
 
-/** Освобождает ресурсы модуля */
+/** Освобождает ресурсы модуля. */
 void gml_cleanup(void);
 
 #endif
