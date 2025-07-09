@@ -6,7 +6,8 @@
 
 typedef struct metric {
 	const char *name, *suffix;
-	double count, sum, min, max;
+	double sum, min, max;
+	int count;
 } metric_t;
 
 static void metric_init(metric_t* metric, const char* name, const char* suffix) {
@@ -26,9 +27,10 @@ static void metric_add(metric_t* metric, double value) {
 }
 
 static void metric_print(metric_t* metric) {
-    printf("Average %1s: %3f %2s\n", metric->name, metric->suffix, metric->sum / metric->count);
-    printf("Minimal %1s: %3f %2s\n", metric->name, metric->suffix, metric->min);
-    printf("Maximal %1s: %3f %2s\n", metric->name, metric->suffix, metric->max);
+	double average = metric->sum / metric->count;
+    printf("Average %s: %f %s\n", metric->name, average,     metric->suffix);
+    printf("Minimal %s: %f %s\n", metric->name, metric->min, metric->suffix);
+    printf("Maximal %s: %f %s\n", metric->name, metric->max, metric->suffix);
 }
 
 #endif

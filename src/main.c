@@ -1,32 +1,21 @@
 #include "drm_fb.h"
 #include "metric.h"
-#include "util/util.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <dlfcn.h>
-#include <sys/stat.h>
-#include <signal.h>
-#include <math.h>
-#include <errno.h>
-
 #include <time.h>
-#include <unistd.h>
-#include <sys/times.h>
+#include <errno.h>
+#include <signal.h>
 
+#include <unistd.h>
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 
-#include <assert.h>
-
-#define PID_FILE "/run/glitch-mint-logo/pid"
-
 
 // ---------------------------------------- dynamic module ----------------------------------------
-
-double fps = 0;
 
 static const char *module_filename;
 static void (*read_config)(config_t*);
@@ -121,7 +110,7 @@ static void release_all(void) {
 static void on_signal(int sig) {
 	printf("Exited by signal %d\n", sig);
 	signal(sig, SIG_DFL);
-	exit((sig == SIGABRT || sig == SIGSEGV || sig == SIGFPE) ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit((sig == SIGILL || sig == SIGABRT || sig == SIGSEGV || sig == SIGFPE) ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
 
@@ -131,47 +120,42 @@ static enum { START, STOP } action = START;
 static const char* config_file = CONFIG_FILE;
 
 static void print_usage_and_exit(const char* argv[]) {
-	fprintf(stderr, "Usage: %s [--stop]\n", argv[0]);
+	fprintf(stderr, "Usage: %s [--stop] [--config <file>] [--mode boot|reboot|shutdown]\n", argv[0]);
 	exit(EINVAL);
 }
 
 static void parse_args(int argc, const char* argv[]) {
+
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "--stop") == 0) {
 			action = STOP;
-
-		} else if (strcmp(argv[i], "--config") == 0) {
+			continue;
+		}
+		
+		if (strcmp(argv[i], "--config") == 0) {
 			if (++i >= argc)
 				print_usage_and_exit(argv);
 
 			config_file = argv[i];
-
-		} else {
-			print_usage_and_exit(argv);
+			continue;
 		}
+		
+		if (strcmp(argv[i], "--mode") == 0) {
+			if (++i >= argc)
+				print_usage_and_exit(argv);
+			
+			const char* mode = argv[i];
+
+			if (strcmp(mode, "boot")     == 0) { boot_mode = BOOT_MODE_BOOT;     continue; }
+			if (strcmp(mode, "reboot")   == 0) { boot_mode = BOOT_MODE_REBOOT;   continue; }
+			if (strcmp(mode, "shutdown") == 0) { boot_mode = BOOT_MODE_SHUTDOWN; continue; }
+		}
+
+		print_usage_and_exit(argv);
 	}
 }
 
 
-static void create_dirs(const char* path) {
-	char* buffer = strdup(path);
-	size_t pathlen = strlen(buffer);
-
-	for (size_t i = 1; i < pathlen; i++) {
-		if (buffer[i] == '/') {
-			buffer[i] = '\0';
-
-			struct stat st;
-			if (stat(buffer, &st) == -1) {
-				mkdir(buffer, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-			}
-
-			buffer[i] = '/';
-		}
-	}
-
-	free(buffer);
-}
 
 static void read_config_file(void) {
 	config_t cfg; 
@@ -195,17 +179,15 @@ static void read_config_file(void) {
 
 // ----------------------------------------- start, stop ------------------------------------------
 
-static double get_time_in_secs(void) {
-	struct timespec time;
-	clock_gettime(CLOCK_MONOTONIC, &time);
-	return time.tv_sec + time.tv_nsec * 1e-9;
-}
 
-
-
+static double start_time;
 static metric_t fps_metric, draw_time_metric, drm_time_metric;
 
 static void print_staticstics(void) {
+	time_t timestamp = time(NULL) - (time_t)((get_time_in_secs() - start_time) * 1000);
+	struct tm* start_tm = localtime(&timestamp);
+	printf("Started at %s\n", asctime(start_tm));
+	
 	metric_print(&fps_metric);
 	printf("\n");
 	metric_print(&draw_time_metric);
@@ -217,6 +199,7 @@ static void start(void) {
 	if (fork()) return;
 
 	signal(SIGINT,  on_signal);
+	signal(SIGILL,  on_signal);
 	signal(SIGABRT, on_signal);
 	signal(SIGFPE,  on_signal);
 	signal(SIGSEGV, on_signal);
@@ -224,17 +207,7 @@ static void start(void) {
 	atexit(release_all);
 	atexit(print_staticstics);
 	
-	create_dirs(PID_FILE);
-	
-	FILE* pid_fp = fopen(PID_FILE, "w");
-	if (!pid_fp) {
-		fprintf(stderr, "Cannot open '" PID_FILE "'\n");
-		exit(EXIT_FAILURE);
-	}
-
-	fprintf(pid_fp, "%d", getpid());
-	fclose(pid_fp);
-
+	write_pid();
 	read_config_file();
 	setup();
 	init_drm();
@@ -265,6 +238,8 @@ static void start(void) {
 
 	const double frame_time = 1 / fps;
 	
+	start_time = get_time_in_secs();
+	
 	for (int tick = 0;; tick++) {
 		double start = get_time_in_secs();
 
@@ -277,7 +252,7 @@ static void start(void) {
 		double drm_end = get_time_in_secs();
 
 		// Swap buffers
-		fb_info* tmp = fbp1;
+		const fb_info* tmp = fbp1;
 		fbp1 = fbp2;
 		fbp2 = tmp;
 
@@ -287,26 +262,13 @@ static void start(void) {
 		double elapsed = get_time_in_secs() - start;
 		metric_add(&fps_metric, 1 / elapsed);
 
-		usleep(1e6 * f64max(0, frame_time - elapsed));
+		usleep(1e6 * fmax(0, frame_time - elapsed));
 	}
 }
 
 
 static void stop(void) {
-	FILE* pid_fp = fopen(PID_FILE, "r");
-
-	if (!pid_fp) {
-		fprintf(stderr, "Cannot open '" PID_FILE "'\n");
-		exit(EXIT_FAILURE);
-	}
-
-	pid_t pid;
-	if (fscanf(pid_fp, "%d", &pid) != 1 || pid <= 0) {
-		fprintf(stderr, "Cannot stop process: invalid PID");
-		exit(EXIT_FAILURE);
-	}
-
-	kill(pid, SIGTERM);
+	kill(read_pid(), SIGTERM);
 }
 
 int main(int argc, const char* argv[]) {

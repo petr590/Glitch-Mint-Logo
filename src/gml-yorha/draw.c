@@ -3,6 +3,7 @@
  */
 
 #include "module.h"
+#include "util.c"
 #include "../util/util.h"
 #include "../util/random.h"
 #include "../util/render_glyph.h"
@@ -21,7 +22,7 @@
 #define SIDE       20
 
 #define RUNNING_STRS_X 50
-#define RUNNING_STRS_Y 50
+#define RUNNING_STRS_Y 80
 
 #define TURN_CHANCE  0.4f
 #define SPLIT_CHANCE 0.2f
@@ -165,8 +166,8 @@ static int find_empty_track(uint32_t w, uint32_t h) {
 }
 
 static void update_bg_buffers(int tick, uint32_t width, uint32_t height) {
-	const uint32_t w = width / PIXEL_SIZE;
-	const uint32_t h = height / PIXEL_SIZE;
+	const uint32_t w = width / CELL_SIZE;
+	const uint32_t h = height / CELL_SIZE;
 
 	if (tick == 0) {
 		init_tracks(tick, w, h);
@@ -229,7 +230,7 @@ static void update_bg_buffers(int tick, uint32_t width, uint32_t height) {
 
 
 static int bitset2d_get_scaled(const bitset2d* bitset, uint32_t x, uint32_t y) {
-	return bitset2d_get(bitset, x / PIXEL_SIZE, y / PIXEL_SIZE);
+	return bitset2d_get(bitset, x / CELL_SIZE, y / CELL_SIZE);
 }
 
 
@@ -259,7 +260,7 @@ static void draw_running_str(int index, int tick, uint32_t width, uint32_t heigh
 	const char* str = running_strings[index].str;
 	const int len = running_strings[index].printed;
 
-	const uint32_t baseline = RUNNING_STRS_Y + (index + 1) * GLYPH_HEIGHT;
+	const uint32_t baseline = RUNNING_STRS_Y + (index + 1) * STRING_HEIGHT;
 	uint32_t sx = RUNNING_STRS_X;
 
 	for (int i = 0; i < len; i++) {
@@ -272,7 +273,7 @@ static void draw_running_str(int index, int tick, uint32_t width, uint32_t heigh
 
 	draw_char(str[0], sx, baseline, width, height, frame);
 
-	if (tick % 3 == 0) {
+	if (tick % 2 == 0) {
 		running_strings[index].printed += 1;
 	}
 }
@@ -292,8 +293,8 @@ void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 
 	for (uint32_t y = 0; y < height; y++) {
 		for (uint32_t x = 0; x < width; x++) {
-			int left_line = x % PIXEL_SIZE < LINE_WIDTH;
-			int top_line  = y % PIXEL_SIZE < LINE_WIDTH;
+			int left_line = x % CELL_SIZE < LINE_WIDTH;
+			int top_line  = y % CELL_SIZE < LINE_WIDTH;
 
 			color_t* res = &frame[y * width + x];
 
@@ -324,11 +325,6 @@ void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 
 	int ret;
 	do {
-		ret = sd_bus_process(bus_ptr, NULL);
-		if (ret < 0) {
-			fprintf(stderr, "Failed to process bus: %s\n", strerror(-ret));
-			exit(-ret);
-		}
-
+		ret = SDBUS_EXIT_IF_ERROR(sd_bus_process(bus_ptr, NULL));
 	} while (ret > 0);
 }

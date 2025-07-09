@@ -10,6 +10,7 @@
 #include FT_FREETYPE_H
 
 #define FPS 8
+#define GLYPH_HEIGHT 20
 
 extern int RANDOM_CONSTANT;
 extern const char* system_name;

@@ -7,7 +7,7 @@
 #include "../common.h"
 #include "../util/bitset2d.h"
 
-#define PIXEL_SIZE 8
+#define CELL_SIZE 8
 
 extern bitset2d v_bg_buffer; // Буфер вертикальных линий,   размер = width * height
 extern bitset2d h_bg_buffer; // Буфер горизонтальных линий, размер = width * height

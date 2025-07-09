@@ -158,8 +158,8 @@ static int find_empty_track(uint32_t w, uint32_t h) {
 }
 
 static void update_bg_buffers(int tick, uint32_t width, uint32_t height) {
-	const uint32_t w = width / PIXEL_SIZE;
-	const uint32_t h = height / PIXEL_SIZE;
+	const uint32_t w = width / CELL_SIZE;
+	const uint32_t h = height / CELL_SIZE;
 
 	if (tick == 0) {
 		init_tracks(tick, w, h);
@@ -222,7 +222,7 @@ static void update_bg_buffers(int tick, uint32_t width, uint32_t height) {
 
 
 static int bitset2d_get_scaled(const bitset2d* bitset, uint32_t x, uint32_t y) {
-	return bitset2d_get(bitset, x / PIXEL_SIZE, y / PIXEL_SIZE);
+	return bitset2d_get(bitset, x / CELL_SIZE, y / CELL_SIZE);
 }
 
 void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
@@ -231,13 +231,13 @@ void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 
 	for (uint32_t y = 0; y < height; y++) {
 		for (uint32_t x = 0; x < width; x++) {
-			int left_line = x % PIXEL_SIZE < LINE_WIDTH;
-			int top_line  = y % PIXEL_SIZE < LINE_WIDTH;
+			int left_line = x % CELL_SIZE < LINE_WIDTH;
+			int top_line  = y % CELL_SIZE < LINE_WIDTH;
 
 			if (left_line || top_line) {
-				if (left_line && bitset2d_get_scaled(&v_bg_buffer, x, y) ||
-					top_line && bitset2d_get_scaled(&h_bg_buffer, x, y) ||
-					left_line && top_line && bitset2d_get_scaled(&p_bg_buffer, x, y)) {
+				if ((left_line && bitset2d_get_scaled(&v_bg_buffer, x, y)) ||
+					(top_line && bitset2d_get_scaled(&h_bg_buffer, x, y)) ||
+					(left_line && top_line && bitset2d_get_scaled(&p_bg_buffer, x, y))) {
 					
 					frame[y * width + x] = LINE_COLOR_ON;
 					continue;

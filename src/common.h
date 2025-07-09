@@ -13,12 +13,24 @@
  * В качестве шаблона модуля используйте файл template/module.h
  */
 
+#ifndef GML_COMMON_H
+#define GML_COMMON_H
+
 #include <stdint.h>
 #include <libconfig.h>
 
 #define CONFIG_FILE "/etc/glitch-mint-logo/config"
 
 typedef uint32_t color_t;
+
+typedef enum boot_mode {
+	BOOT_MODE_BOOT,     // Загрузка
+	BOOT_MODE_REBOOT,   // Перезагрузка
+	BOOT_MODE_SHUTDOWN, // Выключение
+} boot_mode_t;
+
+
+extern boot_mode_t boot_mode;
 
 /**
  * Частота обновления экрана, то есть частота вызова функции gml_draw.
@@ -33,3 +45,5 @@ extern double fps;
  * Строка копируется с помощью strdup для избегания ошибок.
  */
 const char* read_config_str(config_t* cfgp, const char* key);
+
+#endif

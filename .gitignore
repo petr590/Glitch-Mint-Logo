@@ -4,3 +4,4 @@
 /deb/lib/*.so
 /deb/DEBIAN/md5sums
 *.deb
+/early-boot/

@@ -3,7 +3,6 @@
  */
 
 #include "module.h"
-#include "sd_bus_resources.c"
 #include "../util/read_png.h"
 #include "../util/load_font.h"
 #include "../util/render_glyph.h"
@@ -13,6 +12,7 @@
 
 #define FPS 45
 #define FPS_EPSILON 1
+
 
 static const char *logo_path, *font_path;
 
@@ -44,8 +44,8 @@ void gml_setup(void) {
 }
 
 void gml_setup_after_drm(uint32_t width, uint32_t height) {
-	uint32_t w = (width + PIXEL_SIZE - 1) / PIXEL_SIZE;
-	uint32_t h = (height + PIXEL_SIZE - 1) / PIXEL_SIZE;
+	uint32_t w = (width + CELL_SIZE - 1) / CELL_SIZE;
+	uint32_t h = (height + CELL_SIZE - 1) / CELL_SIZE;
 	bitset2d_create(&v_bg_buffer, w, h);
 	bitset2d_create(&h_bg_buffer, w, h);
 	bitset2d_create(&p_bg_buffer, w, h);
@@ -74,5 +74,5 @@ void gml_cleanup(void) {
 	if (freeTypeLib) { FT_Done_FreeType(freeTypeLib); freeTypeLib = NULL; }
 
 	if (png_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-	unref_sd_bus();
+	cleanup_sd_bus();
 }

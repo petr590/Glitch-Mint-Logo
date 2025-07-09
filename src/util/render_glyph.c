@@ -1,18 +1,7 @@
 #include "render_glyph.h"
 
 const glyph_t* render_glyph(char ch, FT_Face face) {
-	static glyph_t glyths[CHARS] = {
-		// Первый глиф - пробел
-		{
-			.buffer = "", // Пустой буфер, но не NULL
-			.width = GLYPH_WIDTH,
-			.height = 0,
-			.left = 0,
-			.top = 0,
-			.advance_x = GLYPH_WIDTH,
-		}
-		// Всё остальное заполняется нулями
-	};
+	static glyph_t glyths[CHARS];
 
 	glyph_t* res = &glyths[ch - CHAR_START];
 	if (res->buffer) {

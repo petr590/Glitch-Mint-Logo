@@ -8,6 +8,8 @@
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 
+#define GLYPH_WIDTH 12
+#define GLYPH_HEIGHT 20
 #define TEXT_PADDING 0
 #define CHAR_WIDTH (GLYPH_WIDTH + TEXT_PADDING)
 #define CHAR_HEIGHT (GLYPH_HEIGHT + TEXT_PADDING)

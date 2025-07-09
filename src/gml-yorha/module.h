@@ -11,8 +11,11 @@
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 
-#define PIXEL_SIZE 8
-#define RUNNING_STRINGS 2
+#define CELL_SIZE     8
+#define GLYPH_HEIGHT  25
+#define STRING_HEIGHT 50
+
+#define RUNNING_STRINGS 11
 
 extern png_structp png_ptr;
 extern png_infop info_ptr, end_info;
@@ -63,5 +66,9 @@ void gml_cleanup_before_drm(void);
 
 /** Освобождает ресурсы модуля. */
 void gml_cleanup(void);
+
+
+void init_sd_bus(void);
+void cleanup_sd_bus(void);
 
 #endif

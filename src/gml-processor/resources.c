@@ -24,8 +24,8 @@ void gml_setup(void) {
 }
 
 void gml_setup_after_drm(uint32_t width, uint32_t height) {
-	uint32_t w = (width + PIXEL_SIZE - 1) / PIXEL_SIZE;
-	uint32_t h = (height + PIXEL_SIZE - 1) / PIXEL_SIZE;
+	uint32_t w = (width + CELL_SIZE - 1) / CELL_SIZE;
+	uint32_t h = (height + CELL_SIZE - 1) / CELL_SIZE;
 	bitset2d_create(&v_bg_buffer, w, h);
 	bitset2d_create(&h_bg_buffer, w, h);
 	bitset2d_create(&p_bg_buffer, w, h);

@@ -1,12 +1,12 @@
 [Unit]
 Description=Glitch Mint Logo Screen
-After=systemd-udev-trigger.service systemd-udevd.service keyboard-setup.service
+After=dbus.service systemd-udev-trigger.service systemd-udevd.service keyboard-setup.service
 DefaultDependencies=no
 ConditionKernelCommandLine=splash
 ConditionKernelCommandLine=!glitch-mint-logo.enable=0
 
 [Service]
-ExecStart=/bin/glitch-mint-logo
+ExecStart=/bin/glitch-mint-logo --mode=boot
 Type=forking
 PIDFile=/run/glitch-mint-logo/pid
 TimeoutSec=5

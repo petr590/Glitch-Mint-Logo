@@ -14,7 +14,7 @@ Glitch Mint Logo - это утилита для отображения лого 
 ## Сборка
 Установите библиотеки при необходимости:
 ```sh
-sudo apt-get install libconfig-dev libpng-dev libfreetype6-dev
+sudo apt-get install libconfig-dev libpng-dev libfreetype6-dev libsystemd-dev
 ```
 
 Скомпилируйте исполняемый файл:

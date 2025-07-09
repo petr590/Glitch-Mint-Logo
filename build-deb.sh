@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 make_link() {
@@ -23,6 +23,8 @@ architecture="$(sed -nE 's/^Architecture:\s*(.*)$/\1/p' ./deb/DEBIAN/control)"
 
 fakeroot dpkg-deb --build ./deb
 
-deb_file="${package}_${version}_${architecture}.deb"
-mv deb.deb "$deb_file"
-echo "'./deb.deb' moved to './$deb_file'"
+if [[ "$1" != '--no-rename' ]]; then
+	deb_file="${package}_${version}_${architecture}.deb"
+	mv deb.deb "$deb_file"
+	echo "'./deb.deb' moved to './$deb_file'"
+fi

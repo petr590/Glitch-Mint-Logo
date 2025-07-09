@@ -5,9 +5,6 @@
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 
-#define GLYPH_WIDTH 12
-#define GLYPH_HEIGHT 20
-
 #define CHAR_START 0x20
 #define CHAR_END   0x80
 #define CHARS (CHAR_END - CHAR_START) // Диапазон печатаемых символов ASCII

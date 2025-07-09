@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.3)
-project(GlitchMintLogo VERSION 1.5.1 LANGUAGES C)
+project(GlitchMintLogo VERSION 1.5.3 LANGUAGES C)
 
 include_directories(/usr/include/drm /usr/include/freetype2)
 
@@ -17,6 +17,7 @@ add_compile_options(
 	-Wcast-qual
 	-Wstrict-prototypes
 	-Wmissing-prototypes
+	-Werror=implicit-function-declaration
 )
 
 # glitch-mint-logo
@@ -26,6 +27,7 @@ add_executable(
 	src/common.c
 	src/main.c
 	src/drm_fb.c
+	src/util.c
 )
 
 target_link_libraries(glitch-mint-logo drm config dl)
@@ -103,6 +105,7 @@ target_link_libraries(gml-pixels m png)
 add_library(
 	gml-yorha SHARED
 	src/common.c
+	src/gml-yorha/sd_bus_resources.c
 	src/gml-yorha/resources.c
 	src/gml-yorha/draw.c
 	src/util/bitset2d.c

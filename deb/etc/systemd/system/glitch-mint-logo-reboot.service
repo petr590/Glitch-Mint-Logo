@@ -7,7 +7,7 @@ ConditionKernelCommandLine=splash
 ConditionKernelCommandLine=!glitch-mint-logo.enable=0
 
 [Service]
-ExecStart=/bin/glitch-mint-logo
+ExecStart=/bin/glitch-mint-logo --mode=reboot
 Type=forking
 PIDFile=/run/glitch-mint-logo/pid
 TimeoutSec=5
