@@ -1,0 +1,13 @@
+[Unit]
+Description=Glitch Mint Logo notifier for cron.service
+After=gml-start.service cron.service
+Requires=gml-start.service cron.service
+DefaultDependencies=no
+
+[Service]
+ExecStart=/bin/glitch-mint-logo --service-loaded cron.service
+Type=oneshot
+TimeoutSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+[Unit]
+Description=Glitch Mint Logo notifier for systemd-journald.service
+After=gml-start.service systemd-journald.service
+Requires=gml-start.service systemd-journald.service
+DefaultDependencies=no
+
+[Service]
+ExecStart=/bin/glitch-mint-logo --service-loaded systemd-journald.service
+Type=oneshot
+TimeoutSec=5
+
+[Install]
+WantedBy=multi-user.target

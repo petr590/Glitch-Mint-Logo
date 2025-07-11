@@ -1,8 +1,10 @@
 #!/bin/bash
 set -e
 systemctl disable\
-	glitch-mint-logo-start.service\
-	glitch-mint-logo-stop.service\
-	glitch-mint-logo-halt.service\
-	glitch-mint-logo-poweroff.service\
-	glitch-mint-logo-reboot.service
+	gml-start.service\
+	gml-stop.service\
+	gml-halt.service\
+	gml-poweroff.service\
+	gml-reboot.service
+
+sudo systemctl enable $(cat /etc/glitch-mint-logo/notifier-services.list)

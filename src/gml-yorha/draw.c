@@ -3,13 +3,11 @@
  */
 
 #include "module.h"
-#include "util.c"
 #include "../util/util.h"
 #include "../util/random.h"
 #include "../util/render_glyph.h"
 #include <string.h>
 #include <math.h>
-
 #include <assert.h>
 
 #define BACKGROUND     0x353535
@@ -18,16 +16,20 @@
 #define LOGO_COLOR     0x888478
 #define TEXT_COLOR     0xf4efb7
 
-#define LINE_WIDTH 2
-#define SIDE       20
+#define LINE_WIDTH 2  // Ширина линии в пикселях
+#define SIDE       20 // Начальная сторона квадрата
 
+#define TURN_CHANCE  0.4f // Шанс того, что линия повернёт
+#define SPLIT_CHANCE 0.2f // Шанс того, что линия разделитсяна две
+
+#define MAX_TRACKS_SIZE 200 // Максимальное количество треков на экране
+
+
+// Координаты начала текста на экране
 #define RUNNING_STRS_X 50
 #define RUNNING_STRS_Y 80
 
-#define TURN_CHANCE  0.4f
-#define SPLIT_CHANCE 0.2f
-
-#define MAX_TRACKS_SIZE 200
+#define FPS_PER_CHAR 1 // За сколько fps выводится 1 символ. Целое число
 
 
 typedef struct {
@@ -273,7 +275,7 @@ static void draw_running_str(int index, int tick, uint32_t width, uint32_t heigh
 
 	draw_char(str[0], sx, baseline, width, height, frame);
 
-	if (tick % 2 == 0) {
+	if (tick % FPS_PER_CHAR == 0) {
 		running_strings[index].printed += 1;
 	}
 }
@@ -284,7 +286,7 @@ void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 
 	const uint32_t img_w = png_get_image_width(png_ptr, info_ptr);
 	const uint32_t img_h = png_get_image_height(png_ptr, info_ptr);
-	const color_t** img_data = (color_t**) png_get_rows(png_ptr, info_ptr);
+	const color_t** img_data = (const color_t**) png_get_rows(png_ptr, info_ptr);
 
 	const int32_t sx = (width  - img_w) / 2;
 	const int32_t sy = (height - img_h) / 2;
@@ -299,8 +301,9 @@ void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 			color_t* res = &frame[y * width + x];
 
 			if (left_line || top_line) {
-				if (left_line && bitset2d_get_scaled(&v_bg_buffer, x, y) ||
-					top_line && bitset2d_get_scaled(&h_bg_buffer, x, y)) {
+				if ((left_line && bitset2d_get_scaled(&v_bg_buffer, x, y)) ||
+					(top_line && bitset2d_get_scaled(&h_bg_buffer, x, y)) ||
+					(left_line && top_line && bitset2d_get_scaled(&p_bg_buffer, x, y))) {
 					
 					*res = LINE_COLOR_ON;
 				} else {
@@ -317,14 +320,9 @@ void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 		}
 	}
 
-	for (int i = 0; i < RUNNING_STRINGS; i++) {
-		if (running_strings[i].str != NULL) {
-			draw_running_str(i, tick, width, height, frame);
-		}
-	}
+	read_from_socket();
 
-	int ret;
-	do {
-		ret = SDBUS_EXIT_IF_ERROR(sd_bus_process(bus_ptr, NULL));
-	} while (ret > 0);
+	for (int i = 0; i < running_strings_len; i++) {
+		draw_running_str(i, tick, width, height, frame);
+	}
 }

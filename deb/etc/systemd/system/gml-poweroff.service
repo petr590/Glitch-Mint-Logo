@@ -1,13 +1,13 @@
 [Unit]
 Description=Glitch Mint Logo Power Off Screen
-After=getty@tty1.service display-manager.service glitch-mint-logo-start.service
+After=getty@tty1.service display-manager.service gml-start.service
 Before=systemd-poweroff.service
 DefaultDependencies=no
 ConditionKernelCommandLine=splash
 ConditionKernelCommandLine=!glitch-mint-logo.enable=0
 
 [Service]
-ExecStart=/bin/glitch-mint-logo --mode=shutdown
+ExecStart=/bin/glitch-mint-logo --mode shutdown
 Type=forking
 PIDFile=/run/glitch-mint-logo/pid
 TimeoutSec=5

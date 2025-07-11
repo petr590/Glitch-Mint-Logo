@@ -1,0 +1,10 @@
+gml-notifier-systemd-journald.service
+gml-notifier-systemd-udevd.service
+gml-notifier-network.service
+gml-notifier-systemd-timesyncd.service
+gml-notifier-dbus.service
+gml-notifier-systemd-logind.service
+gml-notifier-cron.service
+gml-notifier-polkit.service
+gml-notifier-remote-fs.service
+gml-notifier-graphical.service

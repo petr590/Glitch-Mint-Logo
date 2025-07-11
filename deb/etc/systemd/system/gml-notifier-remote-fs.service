@@ -1,0 +1,13 @@
+[Unit]
+Description=Glitch Mint Logo notifier for remote-fs.target
+After=gml-start.service remote-fs.target
+Requires=gml-start.service remote-fs.target
+DefaultDependencies=no
+
+[Service]
+ExecStart=/bin/glitch-mint-logo --service-loaded remote-fs.target
+Type=oneshot
+TimeoutSec=5
+
+[Install]
+WantedBy=multi-user.target

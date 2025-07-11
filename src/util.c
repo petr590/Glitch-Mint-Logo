@@ -16,7 +16,7 @@ double get_time_in_secs(void) {
 	return time.tv_sec + time.tv_nsec * 1e-9;
 }
 
-static void create_dirs(const char* path) {
+void create_dirs(const char* path) {
 	char* buffer = strdup(path);
 	size_t pathlen = strlen(buffer);
 
@@ -38,15 +38,15 @@ static void create_dirs(const char* path) {
 
 
 pid_t read_pid(void) {
-	FILE* pid_fp = fopen(PID_FILE, "r");
+	FILE* fp = fopen(PID_FILE, "r");
 
-	if (!pid_fp) {
+	if (!fp) {
 		fprintf(stderr, "Cannot open '" PID_FILE "'\n");
 		exit(EXIT_FAILURE);
 	}
 
 	pid_t pid;
-	if (fscanf(pid_fp, "%d", &pid) != 1 || pid <= 0) {
+	if (fscanf(fp, "%d", &pid) != 1 || pid <= 0) {
 		fprintf(stderr, "Invalid PID\n");
 		exit(EXIT_FAILURE);
 	}
@@ -55,15 +55,15 @@ pid_t read_pid(void) {
 }
 
 
-void write_pid(void) {
+void write_pid(pid_t pid) {
 	create_dirs(PID_FILE);
 	
-	FILE* pid_fp = fopen(PID_FILE, "w");
-	if (!pid_fp) {
+	FILE* fp = fopen(PID_FILE, "w");
+	if (!fp) {
 		fprintf(stderr, "Cannot open '" PID_FILE "'\n");
 		exit(EXIT_FAILURE);
 	}
 
-	fprintf(pid_fp, "%d", getpid());
-	fclose(pid_fp);
+	fprintf(fp, "%d", pid);
+	fclose(fp);
 }

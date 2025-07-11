@@ -1,8 +1,9 @@
-dev_path = "/dev/dri/card0";
 module = "libgml-yorha.so";
+card_path = "/dev/dri/card0";
+socket_path = "/run/glitch-mint-logo/socket";
 
-logo__logo_path = "/etc/glitch-mint-logo/logo.png";
-logo__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";
+mint_logo__logo_path = "/etc/glitch-mint-logo/logo.png";
+mint_logo__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";
 
 matrix__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";
 

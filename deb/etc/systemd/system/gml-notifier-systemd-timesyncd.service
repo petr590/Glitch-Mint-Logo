@@ -1,0 +1,13 @@
+[Unit]
+Description=Glitch Mint Logo notifier for systemd-timesyncd.service
+After=gml-start.service systemd-timesyncd.service
+Requires=gml-start.service systemd-timesyncd.service
+DefaultDependencies=no
+
+[Service]
+ExecStart=/bin/glitch-mint-logo --service-loaded systemd-timesyncd.service
+Type=oneshot
+TimeoutSec=5
+
+[Install]
+WantedBy=multi-user.target

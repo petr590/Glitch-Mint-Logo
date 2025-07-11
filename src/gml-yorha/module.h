@@ -15,7 +15,7 @@
 #define GLYPH_HEIGHT  25
 #define STRING_HEIGHT 50
 
-#define RUNNING_STRINGS 11
+#define MAX_RUNNING_STRINGS 10
 
 extern png_structp png_ptr;
 extern png_infop info_ptr, end_info;
@@ -31,10 +31,8 @@ typedef struct running_str {
     int printed;
 } running_str_t;
 
-extern running_str_t running_strings[RUNNING_STRINGS];
+extern running_str_t running_strings[MAX_RUNNING_STRINGS];
 extern size_t running_strings_len;
-
-extern sd_bus* bus_ptr;
 
 // Следующие функции вызываются в том порядке, в котором объявлены
 
@@ -68,7 +66,9 @@ void gml_cleanup_before_drm(void);
 void gml_cleanup(void);
 
 
-void init_sd_bus(void);
-void cleanup_sd_bus(void);
+void init_socket(void);
+void cleanup_socket(void);
+
+void read_from_socket(void);
 
 #endif

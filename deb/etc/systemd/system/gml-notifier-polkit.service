@@ -1,0 +1,13 @@
+[Unit]
+Description=Glitch Mint Logo notifier for polkit.service
+After=gml-start.service polkit.service
+Requires=gml-start.service polkit.service
+DefaultDependencies=no
+
+[Service]
+ExecStart=/bin/glitch-mint-logo --service-loaded polkit.service
+Type=oneshot
+TimeoutSec=5
+
+[Install]
+WantedBy=multi-user.target

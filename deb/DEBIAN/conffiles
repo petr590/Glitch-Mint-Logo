@@ -1,3 +1,6 @@
 /etc/glitch-mint-logo/config
-/etc/systemd/system/glitch-mint-logo-start.service
-/etc/systemd/system/glitch-mint-logo-stop.service
+/etc/systemd/system/gml-start.service
+/etc/systemd/system/gml-stop.service
+/etc/systemd/system/gml-reboot.service
+/etc/systemd/system/gml-poweroff.service
+/etc/systemd/system/gml-halt.service

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.3)
-project(GlitchMintLogo VERSION 1.5.3 LANGUAGES C)
+project(GlitchMintLogo VERSION 1.6.0 LANGUAGES C)
 
 include_directories(/usr/include/drm /usr/include/freetype2)
 
@@ -24,13 +24,17 @@ add_compile_options(
 
 add_executable(
 	glitch-mint-logo
-	src/common.c
 	src/main.c
-	src/drm_fb.c
+	src/drm.c
+	src/args.c
 	src/util.c
+	src/common.c
+	src/modules.c
+	src/read_config.c
+	src/signal_handlers.c
 )
 
-target_link_libraries(glitch-mint-logo drm config dl)
+target_link_libraries(glitch-mint-logo m config drm dl)
 
 
 # libgml-logo.so
@@ -69,7 +73,7 @@ add_library(
 	src/gml-wave/draw.c
 )
 
-target_link_libraries(gml-wave m)
+target_link_libraries(gml-wave)
 
 
 # libgml-processor.so
@@ -83,7 +87,7 @@ add_library(
 	src/util/bitset2d.c
 )
 
-target_link_libraries(gml-processor m png)
+target_link_libraries(gml-processor png)
 
 
 # libgml-pixels.so
@@ -97,7 +101,7 @@ add_library(
 	src/util/bitset2d.c
 )
 
-target_link_libraries(gml-pixels m png)
+target_link_libraries(gml-pixels png)
 
 
 # libgml-yorha.so
@@ -105,12 +109,12 @@ target_link_libraries(gml-pixels m png)
 add_library(
 	gml-yorha SHARED
 	src/common.c
-	src/gml-yorha/sd_bus_resources.c
 	src/gml-yorha/resources.c
+	src/gml-yorha/services.c
 	src/gml-yorha/draw.c
 	src/util/bitset2d.c
 	src/util/read_png.c
 	src/util/render_glyph.c
 )
 
-target_link_libraries(gml-yorha m png freetype systemd)
+target_link_libraries(gml-yorha png freetype)

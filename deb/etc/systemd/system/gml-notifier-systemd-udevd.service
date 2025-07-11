@@ -1,0 +1,13 @@
+[Unit]
+Description=Glitch Mint Logo notifier for systemd-udevd.service
+After=gml-start.service systemd-udevd.service
+Requires=gml-start.service systemd-udevd.service
+DefaultDependencies=no
+
+[Service]
+ExecStart=/bin/glitch-mint-logo --service-loaded systemd-udevd.service
+Type=oneshot
+TimeoutSec=5
+
+[Install]
+WantedBy=multi-user.target
