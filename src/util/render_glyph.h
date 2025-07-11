@@ -19,6 +19,6 @@ typedef struct {
  * Рендерит глиф с использованием шрифта, если он ещё не отрендерен.
  * Кэширует все отрендеренные глифы.
  */
-const glyph_t* render_glyph(char ch, FT_Face face);
+const glyph_t* render_glyph(uint32_t code, FT_Face face);
 
 #endif

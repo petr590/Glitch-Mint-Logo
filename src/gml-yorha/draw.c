@@ -17,7 +17,7 @@
 #define TEXT_COLOR     0xf4efb7
 
 #define LINE_WIDTH 2  // Ширина линии в пикселях
-#define SIDE       20 // Начальная сторона квадрата
+#define SIDE       10 // Начальная сторона квадрата
 
 #define TURN_CHANCE  0.4f // Шанс того, что линия повернёт
 #define SPLIT_CHANCE 0.2f // Шанс того, что линия разделитсяна две
@@ -66,30 +66,25 @@ static int is_out_of_bounds(vec2i pos, uint32_t w, uint32_t h) {
 
 
 static void init_tracks(int tick, uint32_t w, uint32_t h) {
-	const int32_t sx = (w - SIDE + 1) / 2;
-	const int32_t sy = (h - SIDE + 1) / 2;
+	const int32_t sx = w - SIDE;
+	const int32_t sy = h - SIDE;
 
 	for (int i = 0; i < SIDE; i++) {
-		track_t* track_ptr = tracks + i*4;
+		track_t* track_ptr = tracks + i*2;
 		
 		track_ptr[0].pos.x = sx + i;
 		track_ptr[0].pos.y = sy - 1;
 		track_ptr[0].prev_offset = UP;
-		
-		track_ptr[1].pos.x = sx + i;
-		track_ptr[1].pos.y = sy + SIDE;
-		track_ptr[1].prev_offset = DOWN;
 
-		track_ptr[2].pos.x = sx - 1;
-		track_ptr[2].pos.y = sy + i;
-		track_ptr[2].prev_offset = LEFT;
+		track_ptr[1].pos.x = sx - 1;
+		track_ptr[1].pos.y = sy + i;
+		track_ptr[1].prev_offset = LEFT;
 
-		track_ptr[3].pos.x = sx + SIDE;
-		track_ptr[3].pos.y = sy + i;
-		track_ptr[3].prev_offset = RIGHT;
+		bitset2d_set_1(&p_bg_buffer, sx + i, sy);
+		bitset2d_set_1(&p_bg_buffer, sx, sy + i);
 	}
 
-	tracks_size = SIDE * 4;
+	tracks_size = SIDE * 2;
 
 	#ifndef NDEBUG // Проверяем, что все координаты разные
 	for (int i = 0; i < tracks_size; i++) {
@@ -100,32 +95,18 @@ static void init_tracks(int tick, uint32_t w, uint32_t h) {
 	}
 	#endif
 
-	for (int dy = 0; dy < SIDE + 2; dy++) {
-		for (int dx = 0; dx < SIDE + 2; dx++) {
+	for (int dy = 0; dy < SIDE; dy++) {
+		for (int dx = 0; dx < SIDE; dx++) {
 			bitset2d_set_1(&p_bg_buffer, sx - 1 + dx, sy - 1 + dy);
 		}
 	}
 
-	bitset2d_set_0(&p_bg_buffer, sx - 1,    sy - 1);
-	bitset2d_set_0(&p_bg_buffer, sx + SIDE, sy - 1);
-	bitset2d_set_0(&p_bg_buffer, sx - 1,    sy + SIDE);
-	bitset2d_set_0(&p_bg_buffer, sx + SIDE, sy + SIDE);
+	bitset2d_set_0(&p_bg_buffer, sx - 1, sy - 1);
 
-
-	const uint32_t cx = (w + 1) / 2;
-	const uint32_t cy = (h + 1) / 2;
-
-	for (int i = 0; i < SIDE / 2; i++) {
-		for (int j = 0; j <= i; j++) {
-			bitset2d_set_1(&v_bg_buffer, cx     + i, cy - 1 + j);
-			bitset2d_set_1(&v_bg_buffer, cx     + i, cy - 1 - j);
-			bitset2d_set_1(&v_bg_buffer, cx - 1 - i, cy - 1 + j);
-			bitset2d_set_1(&v_bg_buffer, cx - 1 - i, cy - 1 - j);
-			
-			bitset2d_set_1(&h_bg_buffer, cx - 1 + j, cy     + i);
-			bitset2d_set_1(&h_bg_buffer, cx - 1 - j, cy     + i);
-			bitset2d_set_1(&h_bg_buffer, cx - 1 + j, cy - 1 - i);
-			bitset2d_set_1(&h_bg_buffer, cx - 1 - j, cy - 1 - i);
+	for (int i = 1; i < SIDE; i++) {
+		for (int j = 1; j <= i; j++) {
+			bitset2d_set_1(&v_bg_buffer, w - 1 - i, h - 1 - j);
+			bitset2d_set_1(&h_bg_buffer, w - 1 - j, h - 1 - i);
 		}
 	}
 }
@@ -168,8 +149,8 @@ static int find_empty_track(uint32_t w, uint32_t h) {
 }
 
 static void update_bg_buffers(int tick, uint32_t width, uint32_t height) {
-	const uint32_t w = width / CELL_SIZE;
-	const uint32_t h = height / CELL_SIZE;
+	const uint32_t w = width / (CELL_SIZE * 2) + 1;
+	const uint32_t h = height / (CELL_SIZE * 2) + 1;
 
 	if (tick == 0) {
 		init_tracks(tick, w, h);
@@ -231,12 +212,7 @@ static void update_bg_buffers(int tick, uint32_t width, uint32_t height) {
 }
 
 
-static int bitset2d_get_scaled(const bitset2d* bitset, uint32_t x, uint32_t y) {
-	return bitset2d_get(bitset, x / CELL_SIZE, y / CELL_SIZE);
-}
-
-
-static uint32_t draw_char(char ch, uint32_t sx, uint32_t baseline, uint32_t width, uint32_t height, color_t* frame) {
+static uint32_t draw_char(uint32_t ch, uint32_t sx, uint32_t baseline, uint32_t width, uint32_t height, color_t* frame) {
 	const glyph_t* glyph = render_glyph(ch, face);
 
 	const uint32_t glyph_w = glyph->width;
@@ -259,7 +235,7 @@ static uint32_t draw_char(char ch, uint32_t sx, uint32_t baseline, uint32_t widt
 
 
 static void draw_running_str(int index, int tick, uint32_t width, uint32_t height, color_t* frame) {
-	const char* str = running_strings[index].str;
+	const wchar_t* str = running_strings[index].str;
 	const int len = running_strings[index].printed;
 
 	const uint32_t baseline = RUNNING_STRS_Y + (index + 1) * STRING_HEIGHT;
@@ -279,6 +255,19 @@ static void draw_running_str(int index, int tick, uint32_t width, uint32_t heigh
 		running_strings[index].printed += 1;
 	}
 }
+
+
+static int get_scaled(const bitset2d* bitset, uint32_t x, uint32_t y, uint8_t dx, uint8_t dy) {
+	x /= CELL_SIZE;
+	y /= CELL_SIZE;
+	if (x >= bitset->width) x = 2 * bitset->width - x - dx;
+	if (y >= bitset->height) y = 2 * bitset->height - y - dy;
+	return bitset2d_get(bitset, x, y);
+}
+
+#define GET_H_SCALED(x, y) get_scaled(&h_bg_buffer, x, y, 1, 2)
+#define GET_V_SCALED(x, y) get_scaled(&v_bg_buffer, x, y, 2, 1)
+#define GET_P_SCALED(x, y) get_scaled(&p_bg_buffer, x, y, 2, 2)
 
 
 void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
@@ -301,9 +290,9 @@ void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 			color_t* res = &frame[y * width + x];
 
 			if (left_line || top_line) {
-				if ((left_line && bitset2d_get_scaled(&v_bg_buffer, x, y)) ||
-					(top_line && bitset2d_get_scaled(&h_bg_buffer, x, y)) ||
-					(left_line && top_line && bitset2d_get_scaled(&p_bg_buffer, x, y))) {
+				if ((left_line && GET_V_SCALED(x, y)) ||
+					(top_line && GET_H_SCALED(x, y)) ||
+					(left_line && top_line && GET_P_SCALED(x, y))) {
 					
 					*res = LINE_COLOR_ON;
 				} else {

@@ -29,14 +29,9 @@ static void release_all(void) {
 // ----------------------------------------- metrics ------------------------------------------
 
 
-static double start_time;
 static metric_t fps_metric, draw_time_metric, drm_time_metric;
 
 static void print_staticstics(void) {
-	time_t timestamp = time(NULL) - (time_t)((get_time_in_secs() - start_time));
-	struct tm* start_tm = localtime(&timestamp);
-	printf("Started at %s\n", asctime(start_tm));
-	
 	metric_print(&fps_metric);
 	printf("\n");
 	metric_print(&draw_time_metric);
@@ -87,8 +82,6 @@ static void start(void) {
 
 	const double frame_time = 1 / fps;
 	
-	start_time = get_time_in_secs();
-	
 	for (int tick = 0; !stopped; tick++) {
 		double start = get_time_in_secs();
 
@@ -96,7 +89,7 @@ static void start(void) {
 
 		double draw_end = get_time_in_secs();
 
-		drmModeSetCrtc(dev_file, crtc_id, fbp1->fb_id, 0, 0, &connector_id, 1, &connector->modes[0]);
+		drmModeSetCrtc(card_file, crtc_id, fbp1->fb_id, 0, 0, &connector_id, 1, &connector->modes[0]);
 
 		double drm_end = get_time_in_secs();
 
@@ -124,7 +117,7 @@ static void notify_service_loaded(void) {
 	int fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (fd < 0) {
-		perror("socket");
+		perror("Failed to open socket");
 		exit(EXIT_FAILURE);
 	}
 
@@ -136,7 +129,7 @@ static void notify_service_loaded(void) {
 	int ret = connect(fd, (struct sockaddr*) &addr, len);
 	if (ret < 0) {
 		close(fd);
-		printf("Failed to connect to '%s': %s\n", addr.sun_path, strerror(errno));
+		fprintf(stderr, "Failed to connect to '%s': %s\n", addr.sun_path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 

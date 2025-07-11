@@ -13,7 +13,7 @@ typedef struct {
 } fb_info;
 
 
-extern int dev_file;
+extern int card_file;
 extern drmModeRes* resources;
 extern drmModeConnector* connector;
 extern fb_info* fb_info1;

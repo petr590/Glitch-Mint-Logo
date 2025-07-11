@@ -24,9 +24,9 @@ sudo apt-get install libconfig-dev libpng-dev libfreetype6-dev libsystemd-dev
 Скомпилируйте исполняемый файл:
 
 ```sh
-mkdir build/
-cmake -B build/ .
-make -C build/
+mkdir release/
+cmake -B release/ .
+make -C release/
 ```
 
 Затем соберите и установите deb-пакет:

@@ -6,10 +6,11 @@ include_directories(/usr/include/drm /usr/include/freetype2)
 if(BUILD_TYPE MATCHES "Debug")
 	add_compile_options(-g)
 else()
-	add_compile_options(-O3)
+	add_compile_options(-DNDEBUG -march=native -flto)
 endif()
 
 add_compile_options(
+	-O3
 	-pedantic
 	-Wall
 	-Wshadow

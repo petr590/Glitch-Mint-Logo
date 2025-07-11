@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <assert.h>
 
 #define FPS 30
 #define FPS_EPSILON 1
@@ -41,11 +42,14 @@ void gml_setup(void) {
 }
 
 void gml_setup_after_drm(uint32_t width, uint32_t height) {
-	uint32_t w = (width + CELL_SIZE - 1) / CELL_SIZE;
-	uint32_t h = (height + CELL_SIZE - 1) / CELL_SIZE;
-	bitset2d_create(&v_bg_buffer, w, h);
-	bitset2d_create(&h_bg_buffer, w, h);
-	bitset2d_create(&p_bg_buffer, w, h);
+	uint32_t w = ((width + CELL_SIZE - 1) / CELL_SIZE + 1) / 2;
+	uint32_t h = ((height + CELL_SIZE - 1) / CELL_SIZE + 1) / 2;
+	assert(w * 2 * CELL_SIZE >= width);
+	assert(h * 2 * CELL_SIZE >= height);
+
+	bitset2d_create(&v_bg_buffer, w + 1, h);
+	bitset2d_create(&h_bg_buffer, w, h + 1);
+	bitset2d_create(&p_bg_buffer, w + 1, h + 1);
 
 	bitset2d_clear(&v_bg_buffer);
 	bitset2d_clear(&h_bg_buffer);

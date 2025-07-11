@@ -1,0 +1,13 @@
+[Unit]
+Description=Glitch Mint Logo notifier for keyboard-setup.service
+After=gml-start.service keyboard-setup.service
+Requires=gml-start.service keyboard-setup.service
+DefaultDependencies=no
+
+[Service]
+ExecStart=/bin/glitch-mint-logo --service-loaded keyboard-setup.service
+Type=oneshot
+TimeoutSec=5
+
+[Install]
+WantedBy=multi-user.target

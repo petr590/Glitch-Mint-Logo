@@ -28,9 +28,9 @@ static void metric_add(metric_t* metric, double value) {
 
 static void metric_print(metric_t* metric) {
 	double average = metric->sum / metric->count;
-    printf("Average %s: %f %s\n", metric->name, average,     metric->suffix);
-    printf("Minimal %s: %f %s\n", metric->name, metric->min, metric->suffix);
-    printf("Maximal %s: %f %s\n", metric->name, metric->max, metric->suffix);
+    printf("Average %s: %6.2f %s\n", metric->name, average,     metric->suffix);
+    printf("Minimal %s: %6.2f %s\n", metric->name, metric->min, metric->suffix);
+    printf("Maximal %s: %6.2f %s\n", metric->name, metric->max, metric->suffix);
 }
 
 #endif

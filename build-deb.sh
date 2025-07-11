@@ -8,10 +8,10 @@ make_link() {
 }
 
 link_executables() {
-	make_link "build/glitch-mint-logo" "deb/bin/glitch-mint-logo"
+	make_link "release/glitch-mint-logo" "deb/bin/glitch-mint-logo"
 
-	for lib in build/lib*.so; do
-		make_link "$lib" "deb/lib/${lib#build/}"
+	for lib in release/lib*.so; do
+		make_link "$lib" "deb/lib/${lib#release/}"
 	done
 }
 

@@ -27,7 +27,7 @@ extern bitset2d p_bg_buffer; // Буфер точек,                разме
 
 
 typedef struct running_str {
-    const char* str;
+    const wchar_t* str;
     int printed;
 } running_str_t;
 

@@ -14,9 +14,9 @@ size_t running_strings_len;
 
 
 typedef struct {
-	const char* name;
-	const char* message;
-	const char* message_ru;
+	const char* const name;
+	const wchar_t* const message;
+	const wchar_t* const message_ru;
 	int used;
 } service_info_t;
 
@@ -25,62 +25,62 @@ typedef struct {
 static service_info_t services[] = {
 	{
 		.name = "systemd-journald.service",
-		.message = "Journal: started",
-		.message_ru = "Журнал: загружен",
+		.message = L"Journal: started",
+		.message_ru = L"Журнал: загружен",
 	},
 
 	{
 		.name = "systemd-udevd.service",
-		.message = "Device manager: initialized",
-		.message_ru = "Диспетчер устройств: инициализирован",
+		.message = L"Device manager: initialized",
+		.message_ru = L"Диспетчер устройств: инициализирован",
 	},
 
 	{
 		.name = "systemd-timesyncd.service",
-		.message = "Time synchronization: established",
-		.message_ru = "Синхронизация времени: установлена",
+		.message = L"Time synchronization: established",
+		.message_ru = L"Синхронизация времени: установлена",
 	},
 
 	{
 		.name = "systemd-logind.service",
-		.message = "Login manager: active",
-		.message_ru = "Менеджер авторизации: активен",
+		.message = L"Login manager: active",
+		.message_ru = L"Менеджер авторизации: активен",
 	},
 
 	{
 		.name = "dbus.service",
-		.message = "IPC bus: initialized",
-		.message_ru = "Шина IPC: инициализирована",
+		.message = L"IPC bus: initialized",
+		.message_ru = L"Шина IPC: инициализирована",
 	},
 
 	{
 		.name = "keyboard-setup.service",
-		.message = "Keyboard: connected",
-		.message_ru = "Клавиатура: подключена",
+		.message = L"Keyboard: connected",
+		.message_ru = L"Клавиатура: подключена",
 	},
 
 	{
 		.name = "network.target",
-		.message = "Network protocols: activated",
-		.message_ru = "Сетевые протоколы: активированы",
+		.message = L"Network protocols: activated",
+		.message_ru = L"Сетевые протоколы: активированы",
 	},
 
 	{
 		.name = "cron.service",
-		.message = "Task scheduler: ready",
-		.message_ru = "Планировщик задач: готов",
+		.message = L"Task scheduler: ready",
+		.message_ru = L"Планировщик задач: готов",
 	},
 
 	{
 		.name = "polkit.service",
-		.message = "Permissions: granted",
-		.message_ru = "Разрешения: предоставлены",
+		.message = L"Permissions: granted",
+		.message_ru = L"Разрешения: предоставлены",
 	},
 
 	{
 		.name = "remote-fs.target",
-		.message = "Remote filesystems: mounted",
-		.message_ru = "Удалённые ФС: подключены",
+		.message = L"Remote filesystems: mounted",
+		.message_ru = L"Удалённые ФС: подключены",
 	},
 };
 
@@ -88,9 +88,11 @@ static service_info_t services[] = {
 
 extern const char* socket_path; // Инициализируется в другом месте
 static int socket_fd = -1;
+static int is_ru = 0;
 
 void init_socket(void) {
-	printf("init_socket()\n");
+	is_ru = strcmp(getenv("LANG"), "ru_RU.UTF-8") == 0;
+
 	unlink(socket_path);
 
 	create_dirs(socket_path);
@@ -118,10 +120,8 @@ void init_socket(void) {
 		exit(EXIT_FAILURE);
 	}
 	
-	
 	printf("Listen: %s\n", socket_path);
-	printf("'%s' %s\n", socket_path, access(socket_path, F_OK) == 0 ? "exists" : "not exists");
-	fflush(stdout);
+	fflush(stdout); // printf буферизует текст, и до systemd он доходит намного позже
 	
 	int flags = fcntl(socket_fd, F_GETFL, 0);
     if (flags >= 0) {
@@ -132,7 +132,7 @@ void init_socket(void) {
 static void add_running_str(service_info_t* service) {
 	if (!service->used && running_strings_len < MAX_RUNNING_STRINGS) {
 		service->used = 1;
-		running_strings[running_strings_len++].str = service->message;
+		running_strings[running_strings_len++].str = is_ru ? service->message_ru : service->message;
 	}
 }
 

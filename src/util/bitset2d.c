@@ -30,6 +30,8 @@ void bitset2d_clear(bitset2d* bitset) {
 }
 
 
+#ifndef NDEBUG
+
 static void check_pos(const char* func, const bitset2d* bitset, uint32_t x, uint32_t y) {
 	if (x >= bitset->width || y >= bitset->height) {
 		fprintf(stderr, "%s: position (%d, %d) is out of bound for bitset (width=%d, height=%d)\n", func, x, y, bitset->width, bitset->height);
@@ -37,9 +39,15 @@ static void check_pos(const char* func, const bitset2d* bitset, uint32_t x, uint
 	}
 }
 
+#define CHECK_POS(func, bitset, x, y) check_pos(func, bitset, x, y)
+
+#else
+#define CHECK_POS(func, bitset, x, y)
+#endif
+
 
 int bitset2d_get(const bitset2d* bitset, uint32_t x, uint32_t y) {
-	check_pos("bitset2d_get", bitset, x, y);
+	CHECK_POS("bitset2d_get", bitset, x, y);
 	size_t index = get_index(bitset, x, y);
 	return (bitset->data[index >> 3] >> (index & 0x7)) & 0x1;
 }
@@ -55,16 +63,16 @@ static void bitset2d_set_1_raw(bitset2d* bitset, uint32_t x, uint32_t y) {
 }
 
 void bitset2d_set_0(bitset2d* bitset, uint32_t x, uint32_t y) {
-	check_pos("bitset2d_set_0", bitset, x, y);
+	CHECK_POS("bitset2d_set_0", bitset, x, y);
 	bitset2d_set_0_raw(bitset, x, y);
 }
 
 void bitset2d_set_1(bitset2d* bitset, uint32_t x, uint32_t y) {
-	check_pos("bitset2d_set_1", bitset, x, y);
+	CHECK_POS("bitset2d_set_1", bitset, x, y);
 	bitset2d_set_1_raw(bitset, x, y);
 }
 
 void bitset2d_set(bitset2d* bitset, uint32_t x, uint32_t y, int value) {
-	check_pos("bitset2d_set", bitset, x, y);
+	CHECK_POS("bitset2d_set", bitset, x, y);
 	(value ? bitset2d_set_1_raw(bitset, x, y) : bitset2d_set_0_raw(bitset, x, y));
 }
