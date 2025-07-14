@@ -10,14 +10,7 @@ typedef struct metric {
 	int count;
 } metric_t;
 
-static void metric_init(metric_t* metric, const char* name, const char* suffix) {
-	metric->name = name;
-	metric->suffix = suffix;
-	metric->count = 0;
-	metric->sum = 0;
-	metric->min = INFINITY;
-	metric->max = 0;
-}
+#define METRIC_INITIALIZER(_name, _suffix) { .name = _name, .suffix = _suffix, .sum = 0, .min = INFINITY, .max = 0, .count = 0 }
 
 static void metric_add(metric_t* metric, double value) {
     metric->count++;

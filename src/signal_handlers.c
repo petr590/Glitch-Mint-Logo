@@ -1,7 +1,7 @@
 #include "signal_handlers.h"
 #include <stdlib.h>
 
-sig_atomic_t stopped = 0;
+volatile sig_atomic_t stopped = 0;
 
 static void set_stopped(int signum) {
 	stopped = 1;

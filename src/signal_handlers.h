@@ -3,7 +3,7 @@
 
 #include <signal.h>
 
-extern sig_atomic_t stopped;
+extern volatile sig_atomic_t stopped;
 
 void add_signal_handlers(void (*on_error)(void));
 

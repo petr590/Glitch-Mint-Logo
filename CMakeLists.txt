@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.3)
-project(GlitchMintLogo VERSION 1.6.0 LANGUAGES C)
+project(GlitchMintLogo VERSION 1.6.2 LANGUAGES C)
 
 include_directories(/usr/include/drm /usr/include/freetype2)
 
 if(BUILD_TYPE MATCHES "Debug")
 	add_compile_options(-g)
 else()
-	add_compile_options(-DNDEBUG -march=native -flto)
+	add_compile_options(-DNDEBUG -march=native -mfpmath=sse)
 endif()
 
 add_compile_options(
@@ -35,7 +35,7 @@ add_executable(
 	src/signal_handlers.c
 )
 
-target_link_libraries(glitch-mint-logo m config drm dl)
+target_link_libraries(glitch-mint-logo m config drm dl pthread)
 
 
 # libgml-logo.so
