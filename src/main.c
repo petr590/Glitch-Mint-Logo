@@ -7,6 +7,7 @@
 #include "util.h"
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
@@ -47,41 +48,74 @@ static void print_staticstics(void) {
 
 static const fb_info* fb_front;
 static const fb_info* fb_back;
-static pthread_mutex_t fb_back_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static atomic_bool front_ready;
+static atomic_bool back_ready;
 static pthread_mutex_t signal_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t signal_cond = PTHREAD_COND_INITIALIZER;
 
-/**
- * Ожидает сигнала по signal_cond от основного потока.
- * После получения сигнала блокирует fb_back_mutex и делает свап fb_front и fb_back.
- * Затем разблокирует fb_back_mutex и отправляет fb_front на отрисовку в libdrm.
- * Цикл повторяется пока stopped == 0.
- */
+static pthread_mutex_t buffer_swap_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool buffer_swapped;
+
+static bool first_thread_stopped;
+
+
+static bool wait_and_swap_buffers(atomic_bool* restrict self_ready, atomic_bool* restrict other_ready) {
+	pthread_mutex_lock(&signal_mutex);
+	*self_ready = true;
+
+	if (*other_ready) {
+		pthread_cond_signal(&signal_cond);
+	} else {
+		pthread_cond_wait(&signal_cond, &signal_mutex);
+	}
+
+	pthread_mutex_unlock(&signal_mutex);
+
+
+	pthread_mutex_lock(&buffer_swap_mutex);
+
+	if (!buffer_swapped) {
+		printf("swap\n");
+
+		const fb_info* tmp = fb_front;
+		fb_front = fb_back;
+		fb_back = tmp;
+
+		front_ready = false;
+		back_ready = false;
+
+		buffer_swapped = true;
+
+		if (stopped) {
+			first_thread_stopped = true;
+			pthread_mutex_unlock(&buffer_swap_mutex);
+			return true;
+		}
+
+	} else {
+		buffer_swapped = false;
+
+		if (first_thread_stopped) {
+			pthread_mutex_unlock(&buffer_swap_mutex);
+			return true;
+		}
+	}
+
+	pthread_mutex_unlock(&buffer_swap_mutex);
+	return false;
+}
+
+
 static void* render_front_buffer(void* ignored) {
 	uint32_t connectors[] = { resources->connectors[0] };
 	const uint32_t crtc_id = resources->crtcs[0];
 	const drmModeModeInfoPtr mode = &connector->modes[0];
 
-	while (!stopped) {
-		pthread_mutex_lock(&signal_mutex);
-		pthread_cond_wait(&signal_cond, &signal_mutex);
-
-		if (stopped) {
-			pthread_mutex_unlock(&signal_mutex);
-			break;
-		}
-
-		pthread_mutex_lock(&fb_back_mutex);
-
-		// Swap buffers
-		const fb_info* tmp = fb_front;
-		fb_front = fb_back;
-		fb_back = tmp;
-
-		pthread_mutex_unlock(&fb_back_mutex);
-		pthread_mutex_unlock(&signal_mutex);
-
+	for (;;) {
 		double start = get_time_in_secs();
+		printf("drm\n");
+
 		drmModeSetCrtc(
 				card_file, crtc_id, fb_front->fb_id, 0, 0,
 				connectors, sizeof(connectors) / sizeof(connectors[0]), mode
@@ -89,17 +123,13 @@ static void* render_front_buffer(void* ignored) {
 		
 		double end = get_time_in_secs();
 		metric_add(&drm_time_metric, (end - start) * 1000);
+
+		if (wait_and_swap_buffers(&front_ready, &back_ready)) break;
 	}
 
 	return NULL;
 }
 
-/**
- * Блокирует fb_back_mutex и рендерит кадр в fb_back. Затем блокирует signal_mutex,
- * отправляет сигнал по signal_cond и разблокирует signal_mutex и fb_back_mutex.
- * После этого спит до начала следующего кадра.
- * Цикл повторяется пока stopped == 0.
- */
 static void render_back_buffer(void) {
 	const uint32_t width = connector->modes[0].hdisplay;
 	const uint32_t height = connector->modes[0].vdisplay;
@@ -108,26 +138,17 @@ static void render_back_buffer(void) {
 	
 	for (int tick = 0;; tick++) {
 		double start = get_time_in_secs();
-
-		pthread_mutex_lock(&fb_back_mutex);
+		printf("draw\n");
+		
 		draw(tick, width, height, fb_back->vaddr);
-
-		pthread_mutex_lock(&signal_mutex);
-		pthread_cond_signal(&signal_cond);
-		pthread_mutex_unlock(&signal_mutex);
-
-		pthread_mutex_unlock(&fb_back_mutex);
-
-		if (stopped) break;
-
 
 		double end = get_time_in_secs();
 		metric_add(&draw_time_metric, (end - start) * 1000);
+		metric_add(&fps_metric, 1 / (end - start));
 
-		double elapsed = get_time_in_secs() - start;
-		metric_add(&fps_metric, 1 / elapsed);
-		
-		usleep(1e6 * fmax(0, frame_time - elapsed));
+		usleep(1e6 * fmax(0, start + frame_time - get_time_in_secs()));
+
+		if (wait_and_swap_buffers(&back_ready, &front_ready)) break;
 	}
 }
 
