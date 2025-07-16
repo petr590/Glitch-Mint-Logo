@@ -28,7 +28,6 @@
 #define MINOR_GLITCH_AMPLITUDE 4
 #define MINOR_GLITCH_CHANCE 0.2f
 
-// Диапазон печатаемых символов ASCII
 #define TEXT_COLOR 0x87CF3E
 #define TEXT_PADDING 10
 
@@ -161,7 +160,7 @@ static void draw_system_name(int tick, uint32_t width, uint32_t height, color_t*
 	memcpy(text_buf, system_name, len);
 
 	if (len < namelen && text_buf[len - 1] != ' ') {
-		text_buf[len - 1] = randchoose(randrange('a', 'z'), randrange('A', 'Z'));
+		text_buf[len - 1] = text_buf[0];
 	}
 
 	uint32_t str_width = 0;
@@ -170,7 +169,7 @@ static void draw_system_name(int tick, uint32_t width, uint32_t height, color_t*
 		const char ch = text_buf[i];
 		if (ch < CHAR_START || ch >= CHAR_END) continue;
 		
-		str_width += render_glyph(ch, face)->width;
+		str_width += render_glyph(ch, face)->advance_x;
 	}
 
 	uint32_t sx = (width - str_width) / 2;

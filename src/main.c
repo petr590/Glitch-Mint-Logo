@@ -14,8 +14,6 @@
 #include <time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <pthread.h>
-#include <stdatomic.h>
 
 
 // ------------------------------------------- release --------------------------------------------
@@ -46,109 +44,44 @@ static void print_staticstics(void) {
 
 // ----------------------------------------- start, stop ------------------------------------------
 
-static const fb_info* fb_front;
-static const fb_info* fb_back;
+static void render(void) {
+	uint32_t connectors[] = { resources->connectors[0] };
+	const uint32_t crtc_id = resources->crtcs[0];
+	const drmModeModeInfoPtr mode = &connector->modes[0];
 
-static atomic_bool front_ready;
-static atomic_bool back_ready;
-static pthread_mutex_t signal_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t signal_cond = PTHREAD_COND_INITIALIZER;
+	const uint32_t width = mode->hdisplay;
+	const uint32_t height = mode->vdisplay;
 
-static pthread_mutex_t buffer_swap_mutex = PTHREAD_MUTEX_INITIALIZER;
-static bool buffer_swapped;
+	const double frame_time = 1 / fps;
 
-static bool first_thread_stopped;
+	const fb_info* fb_front = fb_info1;
+	const fb_info* fb_back = fb_info2;
+	
+	for (int tick = 0; !stopped; tick++) {
+		double draw_start = get_time_in_secs();
+		draw(tick, width, height, fb_back->vaddr);
+		double draw_end = get_time_in_secs();
 
-
-static bool wait_and_swap_buffers(atomic_bool* restrict self_ready, atomic_bool* restrict other_ready) {
-	pthread_mutex_lock(&signal_mutex);
-	*self_ready = true;
-
-	if (*other_ready) {
-		pthread_cond_signal(&signal_cond);
-	} else {
-		pthread_cond_wait(&signal_cond, &signal_mutex);
-	}
-
-	pthread_mutex_unlock(&signal_mutex);
-
-
-	pthread_mutex_lock(&buffer_swap_mutex);
-
-	if (!buffer_swapped) {
-		printf("swap\n");
+		metric_add(&draw_time_metric, (draw_end - draw_start) * 1000);
 
 		const fb_info* tmp = fb_front;
 		fb_front = fb_back;
 		fb_back = tmp;
 
-		front_ready = false;
-		back_ready = false;
 
-		buffer_swapped = true;
-
-		if (stopped) {
-			first_thread_stopped = true;
-			pthread_mutex_unlock(&buffer_swap_mutex);
-			return true;
-		}
-
-	} else {
-		buffer_swapped = false;
-
-		if (first_thread_stopped) {
-			pthread_mutex_unlock(&buffer_swap_mutex);
-			return true;
-		}
-	}
-
-	pthread_mutex_unlock(&buffer_swap_mutex);
-	return false;
-}
-
-
-static void* render_front_buffer(void* ignored) {
-	uint32_t connectors[] = { resources->connectors[0] };
-	const uint32_t crtc_id = resources->crtcs[0];
-	const drmModeModeInfoPtr mode = &connector->modes[0];
-
-	for (;;) {
-		double start = get_time_in_secs();
-		printf("drm\n");
-
+		double drm_start = get_time_in_secs();
 		drmModeSetCrtc(
 				card_file, crtc_id, fb_front->fb_id, 0, 0,
 				connectors, sizeof(connectors) / sizeof(connectors[0]), mode
 		);
-		
-		double end = get_time_in_secs();
-		metric_add(&drm_time_metric, (end - start) * 1000);
+		double drm_end = get_time_in_secs();
 
-		if (wait_and_swap_buffers(&front_ready, &back_ready)) break;
-	}
+		metric_add(&drm_time_metric, (drm_end - drm_start) * 1000);
+		metric_add(&fps_metric, 1 / (drm_end - draw_start));
 
-	return NULL;
-}
+		if (stopped) break;
 
-static void render_back_buffer(void) {
-	const uint32_t width = connector->modes[0].hdisplay;
-	const uint32_t height = connector->modes[0].vdisplay;
-
-	const double frame_time = 1 / fps;
-	
-	for (int tick = 0;; tick++) {
-		double start = get_time_in_secs();
-		printf("draw\n");
-		
-		draw(tick, width, height, fb_back->vaddr);
-
-		double end = get_time_in_secs();
-		metric_add(&draw_time_metric, (end - start) * 1000);
-		metric_add(&fps_metric, 1 / (end - start));
-
-		usleep(1e6 * fmax(0, start + frame_time - get_time_in_secs()));
-
-		if (wait_and_swap_buffers(&back_ready, &front_ready)) break;
+		usleep(1e6 * fmax(0, draw_start + frame_time - get_time_in_secs()));
 	}
 }
 
@@ -177,19 +110,7 @@ static void start(void) {
 	atexit(release_all);
 	atexit(print_staticstics);
 	
-	fb_front = fb_info1;
-	fb_back = fb_info2;
-
-	pthread_t drm_thread;
-	int res = pthread_create(&drm_thread, NULL, render_front_buffer, NULL);
-	if (res) {
-		fprintf(stderr, "Cannot create thread: %d\n", res);
-		exit(EXIT_FAILURE);
-	}
-	
-	render_back_buffer();
-
-	pthread_join(drm_thread, NULL);
+	render();
 }
 
 
@@ -197,6 +118,11 @@ static void start(void) {
 
 static void notify_service_loaded(void) {
 	read_config_file(config_file);
+
+	if (access(socket_path, F_OK) != 0) {
+		printf("File '%s' does not exists, skipping\n", socket_path);
+		return;
+	}
 
 	int fd = socket(AF_UNIX, SOCK_STREAM, 0);
 

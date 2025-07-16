@@ -1,6 +1,7 @@
 #include "module.h"
 #include "../util.h"
 
+#include <stdbool.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -17,7 +18,7 @@ typedef struct {
 	const char* const name;
 	const wchar_t* const message;
 	const wchar_t* const message_ru;
-	int used;
+	bool used;
 } service_info_t;
 
 
@@ -88,7 +89,7 @@ static service_info_t services[] = {
 
 extern const char* socket_path; // Инициализируется в другом месте
 static int socket_fd = -1;
-static int is_ru = 0;
+static bool is_ru = false;
 
 void init_socket(void) {
 	is_ru = strcmp(getenv("LANG"), "ru_RU.UTF-8") == 0;
@@ -131,7 +132,7 @@ void init_socket(void) {
 
 static void add_running_str(service_info_t* service) {
 	if (!service->used && running_strings_len < MAX_RUNNING_STRINGS) {
-		service->used = 1;
+		service->used = true;
 		running_strings[running_strings_len++].str = is_ru ? service->message_ru : service->message;
 	}
 }

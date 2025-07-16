@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.3)
-project(GlitchMintLogo VERSION 1.6.3 LANGUAGES C)
+project(GlitchMintLogo VERSION 1.7.0 LANGUAGES C)
 
 include_directories(/usr/include/drm /usr/include/freetype2)
 
@@ -35,7 +35,7 @@ add_executable(
 	src/signal_handlers.c
 )
 
-target_link_libraries(glitch-mint-logo m config drm dl pthread)
+target_link_libraries(glitch-mint-logo m config drm dl)
 
 
 # libgml-logo.so

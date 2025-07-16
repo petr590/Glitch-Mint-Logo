@@ -10,6 +10,7 @@
 #define __USE_MISC // Для того, чтобы VS Code увидел константы M_PI и др.
 #endif
 #include <math.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <assert.h>
@@ -32,8 +33,8 @@ static uint32_t hash(uint32_t x, uint32_t y) {
 	return hash;
 }
 
-/** @return 1 с шансом chance */
-static int hash_chance(uint32_t hash, float chance) {
+/** @return true с шансом chance */
+static bool hash_chance(uint32_t hash, float chance) {
 	return (float) hash / 0xFFFFFFFFu < chance;
 }
 
@@ -45,7 +46,7 @@ static float brightness(color_t color) {
 }
 
 
-static int is_set(
+static bool is_set(
 	uint32_t x, uint32_t y, uint32_t width, uint32_t height,
 	float max_angle, float min_tg, float max_tg
 ) {
@@ -55,7 +56,7 @@ static int is_set(
 		float diff_angle = max_angle - atanf(tg);
 
 		if (hash_chance(hash(x, y), 1 - diff_angle / FADE_ANGLE)) {
-			return 1;
+			return true;
 		}
 	}
 
@@ -76,13 +77,9 @@ static int is_set(
 		return brightness(mix(BACKGROUND, img_rows[v][u])) >= 0.5f;
 	}
 
-	return 0;
+	return false;
 }
 
-
-static int buffer_get_scaled(uint32_t x, uint32_t y, uint32_t width) {
-	return bitset2d_get(&buffer, x / PIXEL_SIZE, y / PIXEL_SIZE);
-}
 
 static void fill_buffer(int tick, uint32_t width, uint32_t height) {
 	const float max_angle = fminf(M_PI_2 + FADE_ANGLE, tick * ANGLE_PER_TICK);
@@ -98,34 +95,38 @@ static void fill_buffer(int tick, uint32_t width, uint32_t height) {
 
 	for (uint32_t y = 0; y < h; y++) {
 		for (uint32_t x = 0; x < w; x++) {
-			int res = is_set(x, y, w, h, max_angle, min_tg, max_tg);
 
-			if (res) {
+			if (is_set(x, y, w, h, max_angle, min_tg, max_tg)) {
 				bitset2d_set_1(&buffer, x, y);
 			}
 		}
 	}
 }
 
+static int buffer_get_scaled(uint32_t x, uint32_t y, uint32_t width) {
+	return bitset2d_get(&buffer, x / PIXEL_SIZE, y / PIXEL_SIZE);
+}
+
 void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 	fill_buffer(tick, width, height);
-	memset(frame, BACKGROUND_GS, width * height * sizeof(color_t));
 
 	for (uint32_t y = 0; y < height; y++) {
 		for (uint32_t x = 0; x < width; x++) {
-			int res = buffer_get_scaled(x, y, width);
 
-			if (res) {
+			if (buffer_get_scaled(x, y, width)) {
 				frame[y * width + x] = FOREGROUND;
-
-			} else {
-				int left_shadow = x >= SHADOW_WIDTH && buffer_get_scaled(x - SHADOW_WIDTH, y, width);
-				int top_shadow  = y >= SHADOW_WIDTH && buffer_get_scaled(x, y - SHADOW_WIDTH, width);
-
-				if (left_shadow || top_shadow) {
-					frame[y * width + x] = SHADOW;
-				}
+				continue;
 			}
+
+			bool left_shadow = x >= SHADOW_WIDTH && buffer_get_scaled(x - SHADOW_WIDTH, y, width);
+			bool top_shadow  = y >= SHADOW_WIDTH && buffer_get_scaled(x, y - SHADOW_WIDTH, width);
+
+			if (left_shadow || top_shadow) {
+				frame[y * width + x] = SHADOW;
+				continue;
+			}
+
+			frame[y * width + x] = BACKGROUND;
 		}
 	}
 }

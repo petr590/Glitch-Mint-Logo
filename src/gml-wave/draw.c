@@ -74,8 +74,4 @@ void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 
 		prev_y = curr_y;
 	}
-
-	for (int y = 0; y < 10; y++) {
-		frame[(y + height / 2) * width + 10] = 0xFF0000;
-	}
 }

@@ -32,8 +32,11 @@ create_notifiers() {
 
 
 calc_sizes_and_md5() {
-	size=$(du -ks ./deb --exclude=./deb/DEBIAN | cut -f 1)
-	sed -Ei "s/^Installed-Size:.*$/Installed-Size: $size/g" deb/DEBIAN/control
+	size="$(du -ks ./deb --exclude=./deb/DEBIAN | cut -f 1)"
+	arch="$(dpkg-architecture -q DEB_HOST_ARCH)"
+	
+	sed -Ei "s/^Installed-Size:.*$/Installed-Size: $size/g;s/^Architecture:.*$/Architecture: $arch/g" deb/DEBIAN/control
+	
 	find deb/* -maxdepth 0 -not -name DEBIAN -print0 | xargs -0 md5deep -r > deb/DEBIAN/md5sums
 }
 

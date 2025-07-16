@@ -12,8 +12,8 @@ void (*draw)(int, uint32_t, uint32_t, color_t*);
 static void* load_sym(const char* filename, void* handle, const char* id) {
 	void* sym = dlsym(handle, id);
 
-	char* error;
-	if ((error = dlerror()) != NULL)  {
+	char* error = dlerror();
+	if (error)  {
 		fprintf(stderr, "Cannot load symbol %s from '%s': %s\n", id, filename, error);
 		exit(EXIT_FAILURE);
 	}

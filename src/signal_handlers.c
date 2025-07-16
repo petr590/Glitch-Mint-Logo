@@ -1,17 +1,20 @@
 #include "signal_handlers.h"
 #include <stdlib.h>
+#include <stdbool.h>
 
-volatile sig_atomic_t stopped = 0;
+volatile sig_atomic_t stopped = false;
 
 static void set_stopped(int signum) {
-	stopped = 1;
+	stopped = true;
 }
+
 
 static void (*on_error_func)(void);
 
 static void wrap_on_error(int signum) {
 	if (on_error_func) on_error_func();
 }
+
 
 void add_signal_handlers(void (*on_error)(void)) {
 	on_error_func = on_error;
