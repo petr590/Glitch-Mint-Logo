@@ -51,6 +51,8 @@ pid_t read_pid(void) {
 		exit(EXIT_FAILURE);
 	}
 
+	fclose(fp);
+
 	return pid;
 }
 

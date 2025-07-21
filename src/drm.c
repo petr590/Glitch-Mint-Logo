@@ -14,6 +14,7 @@ drmModeRes* resources;
 drmModeConnector* connector;
 fb_info* fb_info1;
 fb_info* fb_info2;
+fb_info* fb_info3;
 
 static drmModeCrtc* saved_crtc;
 
@@ -92,6 +93,7 @@ void init_drm(const char* card_path) {
 	
 	fb_info1 = create_fb(mode->hdisplay, mode->vdisplay);
 	fb_info2 = create_fb(mode->hdisplay, mode->vdisplay);
+	fb_info3 = create_fb(mode->hdisplay, mode->vdisplay);
 }
 
 void cleanup_drm(void) {

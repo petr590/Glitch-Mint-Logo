@@ -31,13 +31,6 @@
 #define TEXT_COLOR 0x87CF3E
 #define TEXT_PADDING 10
 
-/** Изменяет сид на указанный, умноженный на RANDOM_CONSTANT. Возвращает старый сид. */
-static inline int chseed(int seed) {
-	int old_seed = rand();
-	srand(seed * RANDOM_CONSTANT);
-	return old_seed;
-}
-
 /** Возвращает рандомное число между from и to включительно или from, если to < from.
  * Для генерации числа использует переданный сид, умноженный на RANDOM_CONSTANT. */
 static inline int randrange_seed(int from, int to, int seed) {

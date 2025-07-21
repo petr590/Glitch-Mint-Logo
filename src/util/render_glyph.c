@@ -10,17 +10,17 @@ typedef struct {
 static glyph_cache_t* cache = NULL;
 
 static void add_glyph(uint32_t code, glyph_t* glyth) {
-    glyph_cache_t* entry = malloc(sizeof(glyph_cache_t));
-    entry->code = code;
-    entry->glyph = glyth;
+	glyph_cache_t* entry = malloc(sizeof(glyph_cache_t));
+	entry->code = code;
+	entry->glyph = glyth;
 
-    HASH_ADD_INT(cache, code, entry);
+	HASH_ADD_INT(cache, code, entry);
 }
 
 static glyph_cache_t* find_glyph(uint32_t code) {
-    glyph_cache_t* entry;
-    HASH_FIND_INT(cache, &code, entry);
-    return entry;
+	glyph_cache_t* entry;
+	HASH_FIND_INT(cache, &code, entry);
+	return entry;
 }
 
 const glyph_t* render_glyph(uint32_t code, FT_Face face) {

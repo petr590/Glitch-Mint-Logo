@@ -1,116 +1,29 @@
-#include "drm.h"
 #include "args.h"
 #include "modules.h"
 #include "read_config.h"
-#include "signal_handlers.h"
-#include "metric.h"
+#include "start.h"
 #include "util.h"
 
 #include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
+#include <stddef.h>
 #include <unistd.h>
+#include <signal.h>
 #include <errno.h>
-#include <time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
 
-// ------------------------------------------- release --------------------------------------------
-
-static void release_all(void) {
-	if (cleanup_before_drm) cleanup_before_drm();
-	cleanup_drm();
-	if (cleanup) cleanup();
-	cleanup_paths();
-}
+#define CHECK_STOPPED_INTERVAL_MCS 100000 // 0.1 sec
 
 
-// ------------------------------------------- metrics --------------------------------------------
+static void stop_daemon(void) {
+	pid_t pid = read_pid();
+	int ret = kill(pid, SIGTERM);
 
-
-static metric_t fps_metric       = METRIC_INITIALIZER("FPS", "");
-static metric_t draw_time_metric = METRIC_INITIALIZER("draw time", "ms");
-static metric_t drm_time_metric  = METRIC_INITIALIZER("drm time", "ms");
-
-static void print_staticstics(void) {
-	metric_print(&fps_metric);
-	printf("\n");
-	metric_print(&draw_time_metric);
-	printf("\n");
-	metric_print(&drm_time_metric);
-}
-
-
-// ----------------------------------------- start, stop ------------------------------------------
-
-static void render(void) {
-	uint32_t connectors[] = { resources->connectors[0] };
-	const uint32_t crtc_id = resources->crtcs[0];
-	const drmModeModeInfoPtr mode = &connector->modes[0];
-
-	const uint32_t width = mode->hdisplay;
-	const uint32_t height = mode->vdisplay;
-
-	const double frame_time = 1 / fps;
-
-	const fb_info* fb_front = fb_info1;
-	const fb_info* fb_back = fb_info2;
-	
-	for (int tick = 0; !stopped; tick++) {
-		double draw_start = get_time_in_secs();
-		draw(tick, width, height, fb_back->vaddr);
-		double draw_end = get_time_in_secs();
-
-		metric_add(&draw_time_metric, (draw_end - draw_start) * 1000);
-
-		const fb_info* tmp = fb_front;
-		fb_front = fb_back;
-		fb_back = tmp;
-
-
-		double drm_start = get_time_in_secs();
-		drmModeSetCrtc(
-				card_file, crtc_id, fb_front->fb_id, 0, 0,
-				connectors, sizeof(connectors) / sizeof(connectors[0]), mode
-		);
-		double drm_end = get_time_in_secs();
-
-		metric_add(&drm_time_metric, (drm_end - drm_start) * 1000);
-		metric_add(&fps_metric, 1 / (drm_end - draw_start));
-
-		if (stopped) break;
-
-		usleep(1e6 * fmax(0, draw_start + frame_time - get_time_in_secs()));
+	while (ret && errno == ESRCH) {
+		usleep(CHECK_STOPPED_INTERVAL_MCS);
+		ret = kill(pid, 0);
 	}
-}
-
-
-static void start(void) {
-	read_config_file(config_file);
-	
-	setup();
-	init_drm(card_path);
-
-	const drmModeModeInfoPtr mode = &connector->modes[0];
-	
-	if (fps == 0) {
-		fps = (double)(mode->clock * 1000) / (mode->htotal * mode->vtotal);
-	}
-	
-	setup_after_drm(mode->hdisplay, mode->vdisplay);
-	
-	pid_t deamon_pid = fork();
-	if (deamon_pid) {
-		write_pid(deamon_pid);
-		return;
-	}
-	
-	add_signal_handlers(release_all);
-	atexit(release_all);
-	atexit(print_staticstics);
-	
-	render();
 }
 
 
@@ -155,11 +68,11 @@ int main(int argc, const char* argv[]) {
 
 	switch (action) {
 		case START:
-			start();
+			start_render();
 			break;
 		
 		case STOP:
-			kill(read_pid(), SIGTERM);
+			stop_daemon();
 			break;
 		
 		case NOTIFY_SERVICE_LOADED:

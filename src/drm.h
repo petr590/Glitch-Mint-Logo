@@ -18,6 +18,7 @@ extern drmModeRes* resources;
 extern drmModeConnector* connector;
 extern fb_info* fb_info1;
 extern fb_info* fb_info2;
+extern fb_info* fb_info3;
 
 void init_drm(const char* card_path);
 void cleanup_drm(void);

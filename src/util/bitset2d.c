@@ -34,7 +34,7 @@ void bitset2d_clear(bitset2d* bitset) {
 
 static void check_pos(const char* func, const bitset2d* bitset, uint32_t x, uint32_t y) {
 	if (x >= bitset->width || y >= bitset->height) {
-		fprintf(stderr, "%s: position (%d, %d) is out of bound for bitset (width=%d, height=%d)\n", func, x, y, bitset->width, bitset->height);
+		fprintf(stderr, "%s: position (%u, %u) is out of bound for bitset (width=%u, height=%u)\n", func, x, y, bitset->width, bitset->height);
 		exit(EXIT_FAILURE);
 	}
 }

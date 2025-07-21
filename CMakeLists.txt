@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.3)
-project(GlitchMintLogo VERSION 1.7.0 LANGUAGES C)
+project(GlitchMintLogo VERSION 1.7.1 LANGUAGES C)
 
 include_directories(/usr/include/drm /usr/include/freetype2)
 
@@ -26,6 +26,7 @@ add_compile_options(
 add_executable(
 	glitch-mint-logo
 	src/main.c
+	src/start.c
 	src/drm.c
 	src/args.c
 	src/util.c
@@ -35,7 +36,7 @@ add_executable(
 	src/signal_handlers.c
 )
 
-target_link_libraries(glitch-mint-logo m config drm dl)
+target_link_libraries(glitch-mint-logo m config drm dl pthread)
 
 
 # libgml-logo.so
@@ -46,6 +47,7 @@ add_library(
 	src/gml-mint-logo/resources.c
 	src/gml-mint-logo/draw.c
 	src/util/read_png.c
+	src/util/load_font.c
 	src/util/render_glyph.c
 )
 
@@ -59,6 +61,7 @@ add_library(
 	src/common.c
 	src/gml-matrix/resources.c
 	src/gml-matrix/draw.c
+	src/util/load_font.c
 	src/util/render_glyph.c
 )
 
@@ -115,6 +118,7 @@ add_library(
 	src/gml-yorha/draw.c
 	src/util/bitset2d.c
 	src/util/read_png.c
+	src/util/load_font.c
 	src/util/render_glyph.c
 )
 
