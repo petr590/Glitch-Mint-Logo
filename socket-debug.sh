@@ -2,12 +2,12 @@
 # Запускает фоновый процесс ./build/glitch-mint-logo и останавливает его через указанное время
 # Если время не указано, то через 10 секунд
 
-[ -n "$1" ] && time="$1" || time=10
-[ -n "$2" ] && dir="$2" || dir=debug
+[ -n "$1" ] && { time="$1"; shift; } || time=10
+[ -n "$1" ] && { dir="$1"; shift; } || dir=debug
 
 readarray -t services < resources/services.list
 
-sudo "$dir/glitch-mint-logo" --config "$dir/config" > /tmp/stdout 2> /tmp/stderr
+sudo "$dir/glitch-mint-logo" --config "$dir/config" "$@" > /tmp/stdout 2> /tmp/stderr
 
 period="$(bc <<< "scale=3; 0.5 * $time / ${#services[@]}")"
 

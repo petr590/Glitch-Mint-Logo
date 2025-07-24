@@ -1,9 +1,6 @@
 [Unit]
 Description=Terminate Glitch Mint Logo Screen
 After=gml-start.service rc-local.service systemd-user-sessions.service
-#Before=graphical.target lightdm.service
-#After=multi-user.target glitch-mint-logo-start.service
-#Wants=multi-user.target
 
 [Service]
 ExecStart=/bin/glitch-mint-logo --stop

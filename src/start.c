@@ -12,13 +12,17 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#define FFMPEG_OUT_FILE "/tmp/gml-demo.mp4"
+#define FFMPEG_CMD "ffmpeg -hide_banner -f rawvideo -pix_fmt bgra -s %ux%u -r %.2f -i - -c:v libx264 -pix_fmt yuv420p -preset ultrafast -y " FFMPEG_OUT_FILE
+#define FFMPEG_CMD_BUFFER_SIZE (sizeof(FFMPEG_CMD) - 4 + 20 /* %u%u */ - 4 + 7 /* %.2f */)
 
 // ------------------------------------------- metrics --------------------------------------------
 
 
-static metric_t fps_metric       = METRIC_INITIALIZER("FPS", "");
-static metric_t draw_time_metric = METRIC_INITIALIZER("draw time", "ms");
-static metric_t drm_time_metric  = METRIC_INITIALIZER("drm time", "ms");
+static metric_t fps_metric         = METRIC_INITIALIZER("FPS", "");
+static metric_t draw_time_metric   = METRIC_INITIALIZER("draw time", "ms");
+static metric_t drm_time_metric    = METRIC_INITIALIZER("drm time", "ms");
+static metric_t ffmpeg_time_metric = METRIC_INITIALIZER("ffmpeg time", "ms");
 
 static void print_staticstics(void) {
 	metric_print(&fps_metric);
@@ -36,12 +40,12 @@ static const fb_info* fb_back;
 
 static volatile bool front_ready;
 static volatile bool back_ready;
-
 static pthread_cond_t signal_cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t signal_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static pthread_mutex_t buffer_swap_mutex = PTHREAD_MUTEX_INITIALIZER;
 static volatile bool buffer_swapped;
+static pthread_mutex_t buffer_swap_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 static volatile bool first_thread_stopped;
 
 static bool wait_and_swap_buffers(volatile bool* self_ready, const volatile bool* other_ready) {
@@ -114,6 +118,9 @@ static void* render_front(void* ignored) {
 }
 
 
+static FILE* ffmpeg_pipe;
+static pthread_t drm_thread;
+
 static void render_back(void) {
 	const uint32_t width = connector->modes[0].hdisplay;
 	const uint32_t height = connector->modes[0].vdisplay;
@@ -121,15 +128,26 @@ static void render_back(void) {
 	const double frame_time = 1 / fps;
 	
 	for (int tick = 0;; tick++) {
-		double start = get_time_in_secs();
+		double draw_start = get_time_in_secs();
 		
 		draw(tick, width, height, fb_back->vaddr);
 
-		double end = get_time_in_secs();
-		metric_add(&draw_time_metric, (end - start) * 1000);
-		metric_add(&fps_metric, 1 / (end - start));
+		double draw_end = get_time_in_secs();
+		metric_add(&draw_time_metric, (draw_end - draw_start) * 1000);
 
-		usleep(1e6 * fmax(0, start + frame_time - get_time_in_secs()));
+		if (ffmpeg_pipe) {
+			double ffmpeg_start = get_time_in_secs();
+
+			fwrite(fb_back->vaddr, 1, width * height * sizeof(color_t), ffmpeg_pipe);
+			fflush(ffmpeg_pipe);
+
+			double ffmpeg_end = get_time_in_secs();
+			metric_add(&ffmpeg_time_metric, (ffmpeg_end - ffmpeg_start) * 1000);
+		}
+
+		metric_add(&fps_metric, 1 / (get_time_in_secs() - draw_start));
+
+		usleep(1e6 * fmax(0, draw_start + frame_time - get_time_in_secs()));
 
 		if (wait_and_swap_buffers(&back_ready, &front_ready)) break;
 	}
@@ -138,8 +156,18 @@ static void render_back(void) {
 
 // -------------------------------------------- start ---------------------------------------------
 
-
 static void release_all(void) {
+	if (ffmpeg_pipe) {
+		pclose(ffmpeg_pipe);
+		ffmpeg_pipe = NULL;
+	}
+
+	if (drm_thread) {
+		stopped = true;
+		pthread_join(drm_thread, NULL);
+		drm_thread = 0;
+	}
+
 	if (cleanup_before_drm) cleanup_before_drm();
 	cleanup_drm();
 	if (cleanup) cleanup();
@@ -159,7 +187,9 @@ void start_render(void) {
 		fps = (double)(mode->clock * 1000) / (mode->htotal * mode->vtotal);
 	}
 	
-	setup_after_drm(mode->hdisplay, mode->vdisplay);
+	const uint16_t width = mode->hdisplay;
+	const uint16_t height = mode->vdisplay;
+	setup_after_drm(width, height);
 	
 	pid_t deamon_pid = fork();
 	if (deamon_pid) {
@@ -175,7 +205,19 @@ void start_render(void) {
 	fb_front2 = fb_info2;
 	fb_back = fb_info3;
 
-	pthread_t drm_thread;
+	if (record_video) {
+		double local_fps = fmax(fmin(fps, 1000), 0);
+
+		char command[FFMPEG_CMD_BUFFER_SIZE];
+		sprintf(command, FFMPEG_CMD, width, height, local_fps);
+		ffmpeg_pipe = popen(command, "w");
+
+		if (!ffmpeg_pipe) {
+			perror("Failed to open pipe to ffmpeg");
+			exit(EXIT_FAILURE);
+		}
+	}
+
 	int ret = pthread_create(&drm_thread, NULL, render_front, NULL);
 	if (ret) {
 		fprintf(stderr, "Failed to create thread\n");
@@ -185,4 +227,5 @@ void start_render(void) {
 	render_back();
 
 	pthread_join(drm_thread, NULL);
+	drm_thread = 0;
 }

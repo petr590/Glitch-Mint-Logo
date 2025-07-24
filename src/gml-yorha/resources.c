@@ -3,6 +3,7 @@
  */
 
 #include "module.h"
+#include "../util/util.h"
 #include "../util/read_png.h"
 #include "../util/load_font.h"
 #include "../util/render_glyph.h"
@@ -41,15 +42,16 @@ void gml_setup(void) {
 	face = load_freetype_face_or_exit(freeTypeLib, font_path, GLYPH_HEIGHT);
 }
 
+
 void gml_setup_after_drm(uint32_t width, uint32_t height) {
-	uint32_t w = ((width + CELL_SIZE - 1) / CELL_SIZE + 1) / 2;
-	uint32_t h = ((height + CELL_SIZE - 1) / CELL_SIZE + 1) / 2;
+	uint32_t w = u32_div_ceil(u32_div_ceil(width  + LINE_WIDTH / 2, 2), CELL_SIZE);
+	uint32_t h = u32_div_ceil(u32_div_ceil(height + LINE_WIDTH / 2, 2), CELL_SIZE);
 	assert(w * 2 * CELL_SIZE >= width);
 	assert(h * 2 * CELL_SIZE >= height);
 
-	bitset2d_create(&v_bg_buffer, w + 1, h);
-	bitset2d_create(&h_bg_buffer, w, h + 1);
-	bitset2d_create(&p_bg_buffer, w + 1, h + 1);
+	bitset2d_create(&v_bg_buffer, w, h);
+	bitset2d_create(&h_bg_buffer, w, h);
+	bitset2d_create(&p_bg_buffer, w, h);
 
 	bitset2d_clear(&v_bg_buffer);
 	bitset2d_clear(&h_bg_buffer);

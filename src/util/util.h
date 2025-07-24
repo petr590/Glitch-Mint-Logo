@@ -36,4 +36,9 @@ static inline color_t mix(color_t rgb, color_t argb) {
 	return r << 16 | g << 8 | b;
 }
 
+/** Целочисленное деление с округлением вверх */
+static inline uint32_t u32_div_ceil(uint32_t a, uint32_t b) {
+	return (a + b - 1) / b;
+}
+
 #endif

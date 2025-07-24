@@ -11,7 +11,9 @@
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 
-#define CELL_SIZE     8
+#define CELL_SIZE  8 // Размер одной клетки в пикселях с учётом промежутков
+#define LINE_WIDTH 2 // Ширина промежутка в пикселях
+
 #define GLYPH_HEIGHT  25
 #define STRING_HEIGHT 50
 
@@ -21,9 +23,9 @@ extern png_structp png_ptr;
 extern png_infop info_ptr, end_info;
 extern FT_Face face;
 
-extern bitset2d v_bg_buffer; // Буфер вертикальных линий,   размер = width * height
-extern bitset2d h_bg_buffer; // Буфер горизонтальных линий, размер = width * height
-extern bitset2d p_bg_buffer; // Буфер точек,                размер = width * height
+extern bitset2d v_bg_buffer; // Буфер вертикальных линий
+extern bitset2d h_bg_buffer; // Буфер горизонтальных линий
+extern bitset2d p_bg_buffer; // Буфер точек
 
 
 typedef struct running_str {

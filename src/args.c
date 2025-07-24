@@ -7,9 +7,10 @@
 action_t action = START;
 const char* config_file = CONFIG_FILE;
 const char* notify_service_name = NULL;
+bool record_video = false;
 
 static void print_usage_and_exit(const char* argv[]) {
-	fprintf(stderr, "Usage: %s [--config <file>] [--stop | --service-loaded <service>] [--mode boot|reboot|shutdown]\n", argv[0]);
+	fprintf(stderr, "Usage: %s [--config <file>] [--stop | --service-loaded <service>] [--mode boot|reboot|shutdown] [--record-video]\n", argv[0]);
 	exit(EINVAL);
 }
 
@@ -55,6 +56,11 @@ void parse_args(int argc, const char* argv[]) {
 			if (strcmp(mode, "boot")     == 0) { boot_mode = BOOT_MODE_BOOT;     continue; }
 			if (strcmp(mode, "reboot")   == 0) { boot_mode = BOOT_MODE_REBOOT;   continue; }
 			if (strcmp(mode, "shutdown") == 0) { boot_mode = BOOT_MODE_SHUTDOWN; continue; }
+		}
+
+		if (strcmp(argv[i], "--record-video") == 0) {
+			record_video = true;
+			continue;
 		}
 
 		print_usage_and_exit(argv);

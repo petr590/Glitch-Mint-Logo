@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.3)
-project(GlitchMintLogo VERSION 1.7.1 LANGUAGES C)
+project(GlitchMintLogo VERSION 1.7.2 LANGUAGES C)
 
 include_directories(/usr/include/drm /usr/include/freetype2)
 

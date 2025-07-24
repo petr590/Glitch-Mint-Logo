@@ -16,11 +16,10 @@
 #define LOGO_COLOR     0x888478
 #define TEXT_COLOR     0xf4efb7
 
-#define LINE_WIDTH 2  // Ширина линии в пикселях
-#define SIDE       10 // Начальная сторона квадрата
+#define SIDE 10 // Начальная сторона квадрата
 
 #define TURN_CHANCE  0.4f // Шанс того, что линия повернёт
-#define SPLIT_CHANCE 0.2f // Шанс того, что линия разделитсяна две
+#define SPLIT_CHANCE 0.2f // Шанс того, что линия разделится на две
 
 #define MAX_TRACKS_SIZE 200 // Максимальное количество треков на экране
 
@@ -46,10 +45,10 @@ typedef struct {
 } track_t;
 
 
-static const vec2i8 UP    = { .x = -1, .y =  0 };
-static const vec2i8 DOWN  = { .x =  1, .y =  0 };
-static const vec2i8 LEFT  = { .x =  0, .y = -1 };
-static const vec2i8 RIGHT = { .x =  0, .y =  1 };
+static const vec2i8 UP    = { .x =  0, .y =  1 };
+static const vec2i8 DOWN  = { .x =  0, .y = -1 };
+static const vec2i8 LEFT  = { .x =  1, .y =  0 };
+static const vec2i8 RIGHT = { .x = -1, .y =  0 };
 
 static track_t tracks[MAX_TRACKS_SIZE];
 static uint32_t tracks_size;
@@ -66,22 +65,19 @@ static int is_out_of_bounds(vec2i pos, uint32_t w, uint32_t h) {
 
 
 static void init_tracks(int tick, uint32_t w, uint32_t h) {
-	const int32_t sx = w - SIDE;
-	const int32_t sy = h - SIDE;
-
 	for (int i = 0; i < SIDE; i++) {
 		track_t* track_ptr = tracks + i*2;
 		
-		track_ptr[0].pos.x = sx + i;
-		track_ptr[0].pos.y = sy - 1;
+		track_ptr[0].pos.x = i;
+		track_ptr[0].pos.y = SIDE;
 		track_ptr[0].prev_offset = UP;
 
-		track_ptr[1].pos.x = sx - 1;
-		track_ptr[1].pos.y = sy + i;
+		track_ptr[1].pos.x = SIDE;
+		track_ptr[1].pos.y = i;
 		track_ptr[1].prev_offset = LEFT;
 
-		bitset2d_set_1(&p_bg_buffer, sx + i, sy);
-		bitset2d_set_1(&p_bg_buffer, sx, sy + i);
+		bitset2d_set_1(&p_bg_buffer, i, SIDE);
+		bitset2d_set_1(&p_bg_buffer, SIDE, i);
 	}
 
 	tracks_size = SIDE * 2;
@@ -97,16 +93,14 @@ static void init_tracks(int tick, uint32_t w, uint32_t h) {
 
 	for (int dy = 0; dy < SIDE; dy++) {
 		for (int dx = 0; dx < SIDE; dx++) {
-			bitset2d_set_1(&p_bg_buffer, sx - 1 + dx, sy - 1 + dy);
+			bitset2d_set_1(&p_bg_buffer, dx, dy);
 		}
 	}
 
-	bitset2d_set_0(&p_bg_buffer, sx - 1, sy - 1);
-
-	for (int i = 1; i < SIDE; i++) {
-		for (int j = 1; j <= i; j++) {
-			bitset2d_set_1(&v_bg_buffer, w - 1 - i, h - 1 - j);
-			bitset2d_set_1(&h_bg_buffer, w - 1 - j, h - 1 - i);
+	for (int i = 0; i < SIDE; i++) {
+		for (int j = 0; j < i; j++) {
+			bitset2d_set_1(&v_bg_buffer, i, j);
+			bitset2d_set_1(&h_bg_buffer, j, i);
 		}
 	}
 }
@@ -149,8 +143,8 @@ static int find_empty_track(uint32_t w, uint32_t h) {
 }
 
 static void update_bg_buffers(int tick, uint32_t width, uint32_t height) {
-	const uint32_t w = width / (CELL_SIZE * 2) + 1;
-	const uint32_t h = height / (CELL_SIZE * 2) + 1;
+	const uint32_t w = u32_div_ceil(u32_div_ceil(width  + LINE_WIDTH / 2, 2), CELL_SIZE);
+	const uint32_t h = u32_div_ceil(u32_div_ceil(height + LINE_WIDTH / 2, 2), CELL_SIZE);
 
 	if (tick == 0) {
 		init_tracks(tick, w, h);
@@ -179,10 +173,10 @@ static void update_bg_buffers(int tick, uint32_t width, uint32_t height) {
 		vec2i8 offsets[4];
 		int offsets_size = 0;
 
-		if (pos.x > 0     && !bitset2d_get(&p_bg_buffer, pos.x - 1, pos.y)) offsets[offsets_size++] = UP;
-		if (pos.y > 0     && !bitset2d_get(&p_bg_buffer, pos.x, pos.y - 1)) offsets[offsets_size++] = LEFT;
-		if (pos.x + 1 < w && !bitset2d_get(&p_bg_buffer, pos.x + 1, pos.y)) offsets[offsets_size++] = DOWN;
-		if (pos.y + 1 < h && !bitset2d_get(&p_bg_buffer, pos.x, pos.y + 1)) offsets[offsets_size++] = RIGHT;
+		if (pos.x > 0     && !bitset2d_get(&p_bg_buffer, pos.x - 1, pos.y)) offsets[offsets_size++] = RIGHT;
+		if (pos.y > 0     && !bitset2d_get(&p_bg_buffer, pos.x, pos.y - 1)) offsets[offsets_size++] = DOWN;
+		if (pos.x + 1 < w && !bitset2d_get(&p_bg_buffer, pos.x + 1, pos.y)) offsets[offsets_size++] = LEFT;
+		if (pos.y + 1 < h && !bitset2d_get(&p_bg_buffer, pos.x, pos.y + 1)) offsets[offsets_size++] = UP;
 
 		if (offsets_size >= 1) {
 			int j = rand() % offsets_size;
@@ -257,17 +251,9 @@ static void draw_running_str(int index, int tick, uint32_t width, uint32_t heigh
 }
 
 
-static int get_scaled(const bitset2d* bitset, uint32_t x, uint32_t y, uint8_t dx, uint8_t dy) {
-	x /= CELL_SIZE;
-	y /= CELL_SIZE;
-	if (x >= bitset->width) x = 2 * bitset->width - x - dx;
-	if (y >= bitset->height) y = 2 * bitset->height - y - dy;
-	return bitset2d_get(bitset, x, y);
+static int get_scaled(const bitset2d* bitset, uint32_t x, uint32_t y) {
+	return bitset2d_get(bitset, x / CELL_SIZE, y / CELL_SIZE);
 }
-
-#define GET_H_SCALED(x, y) get_scaled(&h_bg_buffer, x, y, 1, 2)
-#define GET_V_SCALED(x, y) get_scaled(&v_bg_buffer, x, y, 2, 1)
-#define GET_P_SCALED(x, y) get_scaled(&p_bg_buffer, x, y, 2, 2)
 
 
 void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
@@ -282,17 +268,24 @@ void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 	const int32_t ex = (width  + img_w) / 2;
 	const int32_t ey = (height + img_h) / 2;
 
+	const uint32_t cx = (width + 1) / 2;
+	const uint32_t cy = (height + 1) / 2;
+
 	for (uint32_t y = 0; y < height; y++) {
 		for (uint32_t x = 0; x < width; x++) {
-			int left_line = x % CELL_SIZE < LINE_WIDTH;
-			int top_line  = y % CELL_SIZE < LINE_WIDTH;
 
 			color_t* res = &frame[y * width + x];
 
+			uint32_t sym_x = (x < cx ? cx - x - 1 : x - cx) + LINE_WIDTH / 2;
+			uint32_t sym_y = (y < cy ? cy - y - 1 : y - cy) + LINE_WIDTH / 2;
+
+			int left_line = sym_x % CELL_SIZE < LINE_WIDTH;
+			int top_line  = sym_y % CELL_SIZE < LINE_WIDTH;
+
 			if (left_line || top_line) {
-				if ((left_line && GET_V_SCALED(x, y)) ||
-					(top_line && GET_H_SCALED(x, y)) ||
-					(left_line && top_line && GET_P_SCALED(x, y))) {
+				if ((left_line             && get_scaled(&v_bg_buffer, sym_x, sym_y)) ||
+					(top_line              && get_scaled(&h_bg_buffer, sym_x, sym_y)) ||
+					(left_line && top_line && get_scaled(&p_bg_buffer, sym_x, sym_y))) {
 					
 					*res = LINE_COLOR_ON;
 				} else {
