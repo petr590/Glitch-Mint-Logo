@@ -11,14 +11,14 @@
 
 typedef struct {
 	uint8_t* buffer;
-	uint32_t width, height;
-	uint32_t left, top, advance_x;
+	uint16_t width, height;
+	int32_t left, top, advance_x;
 } glyph_t;
 
 /**
  * Рендерит глиф с использованием шрифта, если он ещё не отрендерен.
  * Кэширует все отрендеренные глифы.
  */
-const glyph_t* render_glyph(uint32_t code, FT_Face face);
+const glyph_t* render_glyph(wchar_t code, FT_Face face);
 
 #endif

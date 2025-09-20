@@ -4,8 +4,8 @@
 #ifndef GML_WAVE_PROCESSOR_H
 #define GML_WAVE_PROCESSOR_H
 
-#include "../common.h"
-#include "../util/bitset2d.h"
+#include "common.h"
+#include "util/bitset2d.h"
 
 #define CELL_SIZE 8
 
@@ -25,7 +25,7 @@ void gml_setup(void);
  * @param width - ширина экрана.
  * @param height - высота экрана.
  */
-void gml_setup_after_drm(uint32_t width, uint32_t height);
+void gml_setup_after_drm(uint16_t width, uint16_t height);
 
 
 /**
@@ -35,7 +35,7 @@ void gml_setup_after_drm(uint32_t width, uint32_t height);
  * @param height - высота фрейма.
  * @param frame - массив размером width * height, куда рендерится кадр.
  */
-void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame);
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame);
 
 
 /** Освобождает ресурсы модуля перед освобождением ресурсов libdrm. */

@@ -14,7 +14,7 @@ void gml_setup(void) {
 	// Ваш код
 }
 
-void gml_setup_after_drm(uint32_t width, uint32_t height) {
+void gml_setup_after_drm(uint16_t width, uint16_t height) {
 	// Ваш код
 }
 

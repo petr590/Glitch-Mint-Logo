@@ -24,7 +24,7 @@ static void print_error_and_exit(const char* msg, int ret) {
 	exit(EXIT_FAILURE);
 }
 
-static fb_info* create_fb(uint32_t width, uint32_t height) {
+static fb_info* create_fb(uint16_t width, uint16_t height) {
 	struct drm_mode_create_dumb create = {
 		.width = width,
 		.height = height,

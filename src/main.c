@@ -47,7 +47,7 @@ static void notify_service_loaded(void) {
 	struct sockaddr_un addr;
 	addr.sun_family = AF_UNIX;
 	strcpy(addr.sun_path, socket_path);
-	socklen_t len = offsetof(struct sockaddr_un, sun_path) + strlen(socket_path) + 1;
+	const socklen_t len = offsetof(struct sockaddr_un, sun_path) + strlen(socket_path) + 1;
 
 	int ret = connect(fd, (struct sockaddr*) &addr, len);
 	if (ret < 0) {
@@ -56,8 +56,9 @@ static void notify_service_loaded(void) {
 		exit(EXIT_FAILURE);
 	}
 
-	printf("Writing to socket: '%s'\n", notify_service_name);
-	write(fd, notify_service_name, strlen(notify_service_name) + 1);
+	const size_t name_len = strlen(notify_service_name) + 1;
+	const ssize_t wrote = write(fd, notify_service_name, name_len);
+	printf("Writing to socket: '%s': %s\n", notify_service_name, wrote == name_len ? "success" : "error");
 	
 	close(fd);
 }

@@ -3,11 +3,13 @@
  */
 
 #include "module.h"
-#include "../util/read_png.h"
-#include "../util/load_font.h"
-#include "../util/render_glyph.h"
-#include "../util/get_system_name.h"
+#include "util/read_png.h"
+#include "util/load_font.h"
+#include "util/render_glyph.h"
+#include "util/get_system_name.h"
 #include <time.h>
+
+#define UNUSED(v) (void)(v)
 
 static const char *logo_path, *font_path;
 
@@ -45,7 +47,8 @@ void gml_setup(void) {
 	read_png(logo_path, &png_ptr, &info_ptr, &end_info);
 }
 
-void gml_setup_after_drm(uint32_t width, uint32_t height) {
+void gml_setup_after_drm(uint16_t width, uint16_t height) {
+	UNUSED(width);
 	bg_buffer = aligned_alloc(sizeof(color_t), height * sizeof(color_t));
 }
 

@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#define UNUSED(v) (void)(v)
+
 #define FFMPEG_OUT_FILE "/tmp/gml-demo.mp4"
 #define FFMPEG_CMD "ffmpeg -hide_banner -f rawvideo -pix_fmt bgra -s %ux%u -r %.2f -i - -c:v libx264 -pix_fmt yuv420p -preset ultrafast -y " FFMPEG_OUT_FILE
 #define FFMPEG_CMD_BUFFER_SIZE (sizeof(FFMPEG_CMD) - 4 + 20 /* %u%u */ - 4 + 7 /* %.2f */)
@@ -95,7 +97,9 @@ static bool wait_and_swap_buffers(volatile bool* self_ready, const volatile bool
 }
 
 
-static void* render_front(void* ignored) {
+static void* render_front(void* data) {
+	UNUSED(data);
+
 	uint32_t connectors[] = { resources->connectors[0] };
 	const uint32_t crtc_id = resources->crtcs[0];
 	const drmModeModeInfoPtr mode = &connector->modes[0];
@@ -122,8 +126,8 @@ static FILE* ffmpeg_pipe;
 static pthread_t drm_thread;
 
 static void render_back(void) {
-	const uint32_t width = connector->modes[0].hdisplay;
-	const uint32_t height = connector->modes[0].vdisplay;
+	const uint16_t width = connector->modes[0].hdisplay;
+	const uint16_t height = connector->modes[0].vdisplay;
 
 	const double frame_time = 1 / fps;
 	

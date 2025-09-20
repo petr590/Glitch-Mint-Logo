@@ -4,8 +4,8 @@
 #ifndef GML_YORHA_MODULE_H
 #define GML_YORHA_MODULE_H
 
-#include "../common.h"
-#include "../util/bitset2d.h"
+#include "common.h"
+#include "util/bitset2d.h"
 #include <libpng/png.h>
 #include <systemd/sd-bus.h>
 #include <freetype2/ft2build.h>
@@ -34,7 +34,7 @@ typedef struct running_str {
 } running_str_t;
 
 extern running_str_t running_strings[MAX_RUNNING_STRINGS];
-extern size_t running_strings_len;
+extern uint16_t running_strings_len;
 
 // Следующие функции вызываются в том порядке, в котором объявлены
 
@@ -48,7 +48,7 @@ void gml_setup(void);
  * @param width - ширина экрана.
  * @param height - высота экрана.
  */
-void gml_setup_after_drm(uint32_t width, uint32_t height);
+void gml_setup_after_drm(uint16_t width, uint16_t height);
 
 
 /**
@@ -58,7 +58,7 @@ void gml_setup_after_drm(uint32_t width, uint32_t height);
  * @param height - высота фрейма.
  * @param frame - массив размером width * height, куда рендерится кадр.
  */
-void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame);
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame);
 
 
 /** Освобождает ресурсы модуля перед освобождением ресурсов libdrm. */

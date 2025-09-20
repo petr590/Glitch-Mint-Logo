@@ -7,6 +7,8 @@
 #include <math.h>
 #include <time.h>
 
+#define UNUSED(v) (void)(v)
+
 #define FPS 45
 #define FPS_EPSILON 1
 
@@ -15,7 +17,9 @@ bitset2d h_bg_buffer;
 bitset2d p_bg_buffer;
 
 
-void gml_read_config(config_t* cfgp) {}
+void gml_read_config(config_t* cfgp) {
+	UNUSED(cfgp);
+}
 
 // --------------------------------------------- setup --------------------------------------------
 
@@ -23,9 +27,10 @@ void gml_setup(void) {
 	srand(time(NULL));
 }
 
-void gml_setup_after_drm(uint32_t width, uint32_t height) {
+void gml_setup_after_drm(uint16_t width, uint16_t height) {
 	uint32_t w = (width + CELL_SIZE - 1) / CELL_SIZE;
 	uint32_t h = (height + CELL_SIZE - 1) / CELL_SIZE;
+	
 	bitset2d_create(&v_bg_buffer, w, h);
 	bitset2d_create(&h_bg_buffer, w, h);
 	bitset2d_create(&p_bg_buffer, w, h);

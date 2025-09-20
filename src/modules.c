@@ -4,10 +4,10 @@
 
 void (*read_config)(config_t*);
 void (*setup)(void);
-void (*setup_after_drm)(uint32_t, uint32_t);
+void (*setup_after_drm)(uint16_t, uint16_t);
 void (*cleanup_before_drm)(void);
 void (*cleanup)(void);
-void (*draw)(int, uint32_t, uint32_t, color_t*);
+void (*draw)(int, uint16_t, uint16_t, color_t*);
 
 static void* load_sym(const char* filename, void* handle, const char* id) {
 	void* sym = dlsym(handle, id);
@@ -22,7 +22,7 @@ static void* load_sym(const char* filename, void* handle, const char* id) {
 }
 
 void load_module(const char* filename) {
-	void* handle = dlopen(filename, RTLD_LAZY);
+	void* handle = dlopen(filename, RTLD_LAZY | RTLD_GLOBAL);
 
 	if (!handle) {
 		fprintf(stderr, "Cannot load dynamic library %s: %s\n", filename, dlerror());

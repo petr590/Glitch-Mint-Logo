@@ -1,12 +1,14 @@
 #include "module.h"
-#include "../util/render_glyph.h"
-#include "../util/random.h"
-#include "../util/util.h"
+#include "util/render_glyph.h"
+#include "util/random.h"
+#include "util/util.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include <assert.h>
+
+#define UNUSED(v) (void)(v)
 
 #define BACKGROUND_GS 0x1A
 #define BACKGROUND (BACKGROUND_GS << 16 | BACKGROUND_GS << 8 | BACKGROUND_GS)
@@ -19,27 +21,29 @@ static inline char random_char(void) {
 	return randrange('\x21', '\x7E');
 }
 
-void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame) {
+	UNUSED(tick);
+
 	memset(frame, BACKGROUND_GS, width * height * sizeof(color_t));
 
 	static int offset_y = 0;
 
-	for (int y = 0; y < text_h; y++) {
-		for (int x = 0; x < text_w; x++) {
+	for (int32_t y = 0; y < text_h; y++) {
+		for (int32_t x = 0; x < text_w; x++) {
 			char ch = text_buffer[y * text_w + x];
 
 			if (ch != ' ') {
 				const glyph_t* glyph = render_glyph(ch, face);
 
-				const int dst_sx = x * CHAR_WIDTH + glyph->left;
-				const int dst_sy = y * CHAR_HEIGHT - glyph->top + offset_y;
-				const int dst_w = u32min(CHAR_WIDTH, glyph->width);
-				const int dst_h = u32min(CHAR_HEIGHT, glyph->height);
+				const int32_t dst_sx = x * CHAR_WIDTH + glyph->left;
+				const int32_t dst_sy = y * CHAR_HEIGHT - glyph->top + offset_y;
+				const int32_t dst_w = i32min(CHAR_WIDTH, glyph->width);
+				const int32_t dst_h = i32min(CHAR_HEIGHT, glyph->height);
 
-				const int dy_start = -i32min(0, dst_sy);
+				const int32_t dy_start = -i32min(0, dst_sy);
 
-				for (int dy = dy_start; dy < dst_h && dst_sy + dy < height; dy++) {
-					for (int dx = 0; dx < dst_w && dst_sx + dx < width; dx++) {
+				for (int32_t dy = dy_start; dy < dst_h && dst_sy + dy < height; dy++) {
+					for (int32_t dx = 0; dx < dst_w && dst_sx + dx < width; dx++) {
 						uint8_t alpha = glyph->buffer[dy * glyph->width + dx];
 
 						if (alpha > 0) {
@@ -51,9 +55,9 @@ void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
 		}
 	}
 
-	for (int y = 0; y < text_h; y++) {
-		for (int x = 0; x < text_w; x++) {
-			int index = y * text_w + x;
+	for (int32_t y = 0; y < text_h; y++) {
+		for (int32_t x = 0; x < text_w; x++) {
+			int32_t index = y * text_w + x;
 
 			if (text_buffer[index] != ' ' && chance(RAND_CHAR_CHANCE)) {
 				text_buffer[index] = random_char();

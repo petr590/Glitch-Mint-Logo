@@ -3,12 +3,14 @@
  */
 
 #include "module.h"
-#include "../util/random.h"
-#include "../util/util.h"
+#include "util/random.h"
+#include "util/util.h"
 #include <string.h>
 #include <math.h>
 
 #include <assert.h>
+
+#define UNUSED(v) (void)(v)
 
 #define BACKGROUND_GS  0x44
 #define LINE_COLOR_OFF 0x25201D
@@ -42,24 +44,26 @@ static const vec2i8 LEFT  = { .x =  0, .y = -1 };
 static const vec2i8 RIGHT = { .x =  0, .y =  1 };
 
 static track_t tracks[MAX_TRACKS_SIZE];
-static uint32_t tracks_size;
+static uint16_t tracks_size;
 
 
-static int is_in_bounds(vec2i pos, uint32_t w, uint32_t h) {
+static int is_in_bounds(vec2i pos, int32_t w, int32_t h) {
 	return  pos.x >= 0 && pos.x < w &&
 			pos.y >= 0 && pos.y < h;
 }
 
-static int is_out_of_bounds(vec2i pos, uint32_t w, uint32_t h) {
+static int is_out_of_bounds(vec2i pos, int32_t w, int32_t h) {
 	return !is_in_bounds(pos, w, h);
 }
 
 
-static void init_tracks(int tick, uint32_t w, uint32_t h) {
+static void init_tracks(int tick, uint16_t w, uint16_t h) {
+	UNUSED(tick);
+
 	const int32_t sx = (w - SIDE + 1) / 2;
 	const int32_t sy = (h - SIDE + 1) / 2;
 
-	for (int i = 0; i < SIDE; i++) {
+	for (uint16_t i = 0; i < SIDE; i++) {
 		track_t* track_ptr = tracks + i*4;
 		
 		track_ptr[0].pos.x = sx + i;
@@ -82,8 +86,8 @@ static void init_tracks(int tick, uint32_t w, uint32_t h) {
 	tracks_size = SIDE * 4;
 
 	#ifndef NDEBUG // Проверяем, что все координаты разные
-	for (int i = 0; i < tracks_size; i++) {
-		for (int j = i + 1; j < tracks_size; j++) {
+	for (uint16_t i = 0; i < tracks_size; i++) {
+		for (uint16_t j = i + 1; j < tracks_size; j++) {
 			assert( tracks[i].pos.x != tracks[j].pos.x ||
 					tracks[i].pos.y != tracks[j].pos.y);
 		}
@@ -102,8 +106,8 @@ static void init_tracks(int tick, uint32_t w, uint32_t h) {
 	bitset2d_set_0(&p_bg_buffer, sx + SIDE, sy + SIDE);
 
 
-	const uint32_t cx = (w + 1) / 2;
-	const uint32_t cy = (h + 1) / 2;
+	const int32_t cx = (w + 1) / 2;
+	const int32_t cy = (h + 1) / 2;
 
 	for (int i = 0; i < SIDE / 2; i++) {
 		for (int j = 0; j <= i; j++) {
@@ -140,15 +144,15 @@ static void add_line(int index, vec2i pos, vec2i8 offset) {
 	bitset2d_set_1(&p_bg_buffer, new_pos.x, new_pos.y);
 
 	if (pos.x != new_pos.x) {
-		bitset2d_set_1(&h_bg_buffer, u32min(pos.x, new_pos.x), pos.y);
+		bitset2d_set_1(&h_bg_buffer, i32min(pos.x, new_pos.x), pos.y);
 	} else {
-		bitset2d_set_1(&v_bg_buffer, pos.x, u32min(pos.y, new_pos.y));
+		bitset2d_set_1(&v_bg_buffer, pos.x, i32min(pos.y, new_pos.y));
 	}
 }
 
 
-static int find_empty_track(uint32_t w, uint32_t h) {
-	for (int i = 0; i < tracks_size; i++) {
+static int find_empty_track(int32_t w, int32_t h) {
+	for (uint16_t i = 0; i < tracks_size; i++) {
 		if (is_out_of_bounds(tracks[i].pos, w, h)) {
 			return i;
 		}
@@ -157,17 +161,17 @@ static int find_empty_track(uint32_t w, uint32_t h) {
 	return -1;
 }
 
-static void update_bg_buffers(int tick, uint32_t width, uint32_t height) {
-	const uint32_t w = width / CELL_SIZE;
-	const uint32_t h = height / CELL_SIZE;
+static void update_bg_buffers(int tick, uint16_t width, uint16_t height) {
+	const uint16_t w = width / CELL_SIZE;
+	const uint16_t h = height / CELL_SIZE;
 
 	if (tick == 0) {
 		init_tracks(tick, w, h);
 	}
 
-	const uint32_t tracks_size_local = tracks_size;
+	const uint16_t tracks_size_local = tracks_size;
 
-	for (uint32_t i = 0; i < tracks_size_local; i++) {
+	for (uint16_t i = 0; i < tracks_size_local; i++) {
 		vec2i pos = tracks[i].pos;
 
 		if (is_out_of_bounds(pos, w, h)) {
@@ -221,16 +225,16 @@ static void update_bg_buffers(int tick, uint32_t width, uint32_t height) {
 }
 
 
-static int bitset2d_get_scaled(const bitset2d* bitset, uint32_t x, uint32_t y) {
+static int bitset2d_get_scaled(const bitset2d* bitset, int32_t x, int32_t y) {
 	return bitset2d_get(bitset, x / CELL_SIZE, y / CELL_SIZE);
 }
 
-void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame) {
 	update_bg_buffers(tick, width, height);
 	memset(frame, BACKGROUND_GS, width * height * sizeof(color_t));
 
-	for (uint32_t y = 0; y < height; y++) {
-		for (uint32_t x = 0; x < width; x++) {
+	for (uint16_t y = 0; y < height; y++) {
+		for (uint16_t x = 0; x < width; x++) {
 			int left_line = x % CELL_SIZE < LINE_WIDTH;
 			int top_line  = y % CELL_SIZE < LINE_WIDTH;
 

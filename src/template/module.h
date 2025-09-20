@@ -27,7 +27,7 @@
  * переменную fps в функции gml_setup_after_drm (на момент вызова gml_setup fps = 0).
  */
 
-#include "../common.h"
+#include "common.h"
 
 // Следующие функции вызываются в том порядке, в котором объявлены
 
@@ -44,7 +44,7 @@ void gml_setup(void);
  * @param width - ширина экрана.
  * @param height - высота экрана.
  */
-void gml_setup_after_drm(uint32_t width, uint32_t height);
+void gml_setup_after_drm(uint16_t width, uint16_t height);
 
 
 /**
@@ -56,7 +56,7 @@ void gml_setup_after_drm(uint32_t width, uint32_t height);
  * @param height - высота фрейма.
  * @param frame - массив размером width * height, куда рендерится кадр.
  */
-void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame);
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame);
 
 
 /**

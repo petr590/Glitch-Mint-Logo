@@ -5,8 +5,8 @@
  * которая реализует следующие функции:
  * 
  * void gml_setup(void);
- * void gml_setup_after_drm(uint32_t width, uint32_t height);
- * void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame);
+ * void gml_setup_after_drm(uint16_t width, uint16_t height);
+ * void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame);
  * void gml_cleanup_before_drm(void);
  * void gml_cleanup(void);
  * 

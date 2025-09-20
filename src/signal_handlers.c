@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#define UNUSED(v) (void)(v)
+
 volatile sig_atomic_t stopped = false;
 
 static void set_stopped(int signum) {
+	UNUSED(signum);
 	stopped = true;
 }
 
@@ -12,6 +15,7 @@ static void set_stopped(int signum) {
 static void (*on_error_func)(void);
 
 static void wrap_on_error(int signum) {
+	UNUSED(signum);
 	if (on_error_func) on_error_func();
 }
 

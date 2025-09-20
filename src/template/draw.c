@@ -4,6 +4,6 @@
 
 #include "module.h"
 
-void gml_draw(int tick, uint32_t width, uint32_t height, color_t* frame) {
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame) {
 	// Ваш код
 }

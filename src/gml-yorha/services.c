@@ -1,5 +1,5 @@
 #include "module.h"
-#include "../util.h"
+#include "util.h"
 
 #include <stdbool.h>
 #include <unistd.h>
@@ -11,7 +11,7 @@
 
 
 running_str_t running_strings[MAX_RUNNING_STRINGS];
-size_t running_strings_len;
+uint16_t running_strings_len;
 
 
 typedef struct {
@@ -107,7 +107,7 @@ void init_socket(void) {
 	struct sockaddr_un addr;
 	addr.sun_family = AF_UNIX;
 	strcpy(addr.sun_path, socket_path);
-	socklen_t len = offsetof(struct sockaddr_un, sun_path) + strlen(socket_path) + 1;
+	const socklen_t len = offsetof(struct sockaddr_un, sun_path) + strlen(socket_path) + 1;
 
 	int ret = bind(socket_fd, (struct sockaddr*) &addr, len);
 	if (ret < 0) {
@@ -144,13 +144,13 @@ void read_from_socket(void) {
 		int client_fd = accept(socket_fd, NULL, NULL);
 		if (client_fd < 0) break;
 
-		int n = read(client_fd, buffer, sizeof(buffer) - 1);
+		ssize_t n = read(client_fd, buffer, sizeof(buffer) - 1);
 		if (n < 0) break;
 
 		buffer[n] = '\0';
 		printf("Read from socket: '%s'\n", buffer);
 
-		for (int i = 0; i < SERVICES; i++) {
+		for (uint32_t i = 0; i < SERVICES; i++) {
 			if (strcmp(services[i].name, buffer) == 0) {
 				add_running_str(&services[i]);
 				break;

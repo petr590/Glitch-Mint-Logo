@@ -1,12 +1,14 @@
 #include "bitset2d.h"
 #include <string.h>
 
+typedef int32_t index_t;
+
 static size_t get_size(uint32_t width, uint32_t height) {
 	return ((size_t) width * height + 7) / 8;
 }
 
-static size_t get_index(const bitset2d* bitset, uint32_t x, uint32_t y) {
-	return (size_t) y * bitset->width + x;
+static size_t get_index(const bitset2d* bitset, index_t x, index_t y) {
+	return (size_t) y * bitset->width + (size_t) x;
 }
 
 
@@ -32,9 +34,9 @@ void bitset2d_clear(bitset2d* bitset) {
 
 #ifndef NDEBUG
 
-static void check_pos(const char* func, const bitset2d* bitset, uint32_t x, uint32_t y) {
-	if (x >= bitset->width || y >= bitset->height) {
-		fprintf(stderr, "%s: position (%u, %u) is out of bound for bitset (width=%u, height=%u)\n", func, x, y, bitset->width, bitset->height);
+static void check_pos(const char* func, const bitset2d* bitset, index_t x, index_t y) {
+	if (x < 0 || y < 0 || x >= bitset->width || y >= bitset->height) {
+		fprintf(stderr, "%s: position (%i, %i) is out of bound for bitset (width=%u, height=%u)\n", func, x, y, bitset->width, bitset->height);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -46,33 +48,33 @@ static void check_pos(const char* func, const bitset2d* bitset, uint32_t x, uint
 #endif
 
 
-int bitset2d_get(const bitset2d* bitset, uint32_t x, uint32_t y) {
+int bitset2d_get(const bitset2d* bitset, index_t x, index_t y) {
 	CHECK_POS("bitset2d_get", bitset, x, y);
 	size_t index = get_index(bitset, x, y);
 	return (bitset->data[index >> 3] >> (index & 0x7)) & 0x1;
 }
 
-static void bitset2d_set_0_raw(bitset2d* bitset, uint32_t x, uint32_t y) {
+static void bitset2d_set_0_raw(bitset2d* bitset, index_t x, index_t y) {
 	size_t index = get_index(bitset, x, y);
-	bitset->data[index >> 3] &= ~(1 << (index & 0x7));
+	bitset->data[index >> 3] &= (uint8_t) ~(1 << (index & 0x7));
 }
 
-static void bitset2d_set_1_raw(bitset2d* bitset, uint32_t x, uint32_t y) {
+static void bitset2d_set_1_raw(bitset2d* bitset, index_t x, index_t y) {
 	size_t index = get_index(bitset, x, y);
-	bitset->data[index >> 3] |= (1 << (index & 0x7));
+	bitset->data[index >> 3] |= (uint8_t)(1 << (index & 0x7));
 }
 
-void bitset2d_set_0(bitset2d* bitset, uint32_t x, uint32_t y) {
+void bitset2d_set_0(bitset2d* bitset, index_t x, index_t y) {
 	CHECK_POS("bitset2d_set_0", bitset, x, y);
 	bitset2d_set_0_raw(bitset, x, y);
 }
 
-void bitset2d_set_1(bitset2d* bitset, uint32_t x, uint32_t y) {
+void bitset2d_set_1(bitset2d* bitset, index_t x, index_t y) {
 	CHECK_POS("bitset2d_set_1", bitset, x, y);
 	bitset2d_set_1_raw(bitset, x, y);
 }
 
-void bitset2d_set(bitset2d* bitset, uint32_t x, uint32_t y, int value) {
+void bitset2d_set(bitset2d* bitset, index_t x, index_t y, int value) {
 	CHECK_POS("bitset2d_set", bitset, x, y);
 	(value ? bitset2d_set_1_raw(bitset, x, y) : bitset2d_set_0_raw(bitset, x, y));
 }

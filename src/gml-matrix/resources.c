@@ -3,8 +3,10 @@
  */
 
 #include "module.h"
-#include "../util/render_glyph.h"
+#include "util/render_glyph.h"
+#include "util/load_font.h"
 #include <time.h>
+#include <math.h>
 
 #define FPS 60
 #define FPS_EPSILON 1
@@ -12,7 +14,7 @@
 static const char* font_path;
 
 FT_Face face;
-int text_w, text_h;
+int32_t text_w, text_h;
 char* text_buffer;
 
 void gml_read_config(config_t* cfgp) {
@@ -23,29 +25,14 @@ void gml_read_config(config_t* cfgp) {
 
 static FT_Library freeTypeLib;
 
-static void init_font_face(void) {
-	FT_Error err = FT_Init_FreeType(&freeTypeLib);
-	if (err) {
-		fprintf(stderr, "Cannot initialize FreeType\n");
-		exit(EXIT_FAILURE);
-	}
-
-	err = FT_New_Face(freeTypeLib, font_path, 0, &face);
-	if (err) {
-		fprintf(stderr, "Cannot load font from file '%s'\n", font_path);
-		exit(EXIT_FAILURE);
-	}
-
-	FT_Set_Pixel_Sizes(face, 0, GLYPH_HEIGHT);
-}
-
-
 void gml_setup(void) {
 	srand(time(NULL));
-	init_font_face();
+	
+	freeTypeLib = init_freetype_lib_or_exit();
+	face = load_freetype_face_or_exit(freeTypeLib, font_path, GLYPH_HEIGHT);
 }
 
-void gml_setup_after_drm(uint32_t width, uint32_t height) {
+void gml_setup_after_drm(uint16_t width, uint16_t height) {
 	text_w = (width + CHAR_WIDTH - 1) / CHAR_WIDTH;
 	text_h = (height + CHAR_HEIGHT - 1) / CHAR_HEIGHT;
 
@@ -53,7 +40,7 @@ void gml_setup_after_drm(uint32_t width, uint32_t height) {
 	text_buffer = malloc(size);
 	memset(text_buffer, ' ', size);
 
-	if (abs(FPS - fps) > FPS_EPSILON) {
+	if (fabs(FPS - fps) > FPS_EPSILON) {
 		fps = FPS;
 	}
 }
