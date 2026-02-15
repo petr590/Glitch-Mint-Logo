@@ -36,8 +36,9 @@ void gml_setup_after_drm(uint16_t width, uint16_t height);
  * @param width - ширина фрейма.
  * @param height - высота фрейма.
  * @param frame - массив размером width * height, куда рендерится кадр.
+ * @param supposed_time - предположительное время загрузки, рассчитанное из предыдущих загрузок.
  */
-void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame);
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame, double supposed_time);
 
 
 /** Освобождает ресурсы модуля перед освобождением ресурсов libdrm */

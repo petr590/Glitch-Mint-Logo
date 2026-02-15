@@ -8,6 +8,7 @@
 #include <sys/un.h>
 
 #define SERVICES (sizeof(services) / sizeof(services[0]))
+#define RU_PREFIX "ru_RU"
 
 
 running_str_t running_strings[MAX_RUNNING_STRINGS];
@@ -92,7 +93,7 @@ static int socket_fd = -1;
 static bool is_ru = false;
 
 void init_socket(void) {
-	is_ru = strcmp(getenv("LANG"), "ru_RU.UTF-8") == 0;
+	is_ru = strncmp(getenv("LANG"), RU_PREFIX, sizeof(RU_PREFIX) - 1) == 0;
 
 	unlink(socket_path);
 

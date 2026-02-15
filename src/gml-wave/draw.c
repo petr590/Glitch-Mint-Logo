@@ -8,6 +8,8 @@
 #endif
 #include <math.h>
 
+#define UNUSED(v) (void)(v)
+
 #define M_PI_F ((float)M_PI)
 #define SMOOTH_COEFFICIENT 10.0f
 #define OCTAVE_AMPLITUDE 3
@@ -53,7 +55,9 @@ static void fill_randbufs(uint16_t width, uint16_t height) {
 	add_octave(width, height, 40, 12);
 }
 
-void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame) {
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame, double supposed_time) {
+	UNUSED(supposed_time);
+
 	fill_randbufs(width, height);
 
 	memset(frame, 0, width * height * sizeof(color_t));

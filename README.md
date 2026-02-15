@@ -15,10 +15,11 @@ Glitch Mint Logo - это утилита для отображения лого 
 
 ## Сборка
 
-Установите библиотеки при необходимости:
+Для сборки программы понадобится CMake и любой компилятор C++, совместимый с CMake (например, gcc или clang). Пакет hashdeep нужен для сборки deb-пакета из исходников. Также понядобятся некоторые библиотеки C++. Установка пакетов в системах с apt:
 
 ```sh
-sudo apt-get install libconfig-dev libpng-dev libfreetype6-dev libsystemd-dev
+sudo apt-get install gcc cmake hashdeep
+sudo apt-get install libconfig-dev libpng-dev libfreetype6-dev libsystemd-dev libdrm-dev
 ```
 
 Скомпилируйте исполняемый файл:
@@ -26,7 +27,7 @@ sudo apt-get install libconfig-dev libpng-dev libfreetype6-dev libsystemd-dev
 ```sh
 mkdir release/
 cmake -B release/ .
-make -C release/
+make -j -C release/
 ```
 
 Затем соберите и установите deb-пакет:
@@ -55,11 +56,13 @@ sudo apt install ./<название пакета>.deb
 **glitch-mint-logo.enable=0**, это необходимо для избежания конфликтов Glitch Mint Logo и Plymouth.
 
 После редактирования **/etc/default/grub** необходимо обновить grub:
-`sudo update-grub`
+```sh
+sudo update-grub
+```
 
 ## Конфиг
 
-Конфиг распложен по пути **/etc/glitch-mint-logo/config**. Его натройки:
+Конфиг распложен по пути **/etc/glitch-mint-logo/config**. Его настройки:
 
 - **card_path** - путь к файлу для сообщения с libdrm. По умолчанию **/dev/dri/card0**
 - **module** - название модуля. Все модули ищутся в папке /lib и начинаются с префикса _libgml-_

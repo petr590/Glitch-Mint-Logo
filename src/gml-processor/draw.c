@@ -229,7 +229,9 @@ static int bitset2d_get_scaled(const bitset2d* bitset, int32_t x, int32_t y) {
 	return bitset2d_get(bitset, x / CELL_SIZE, y / CELL_SIZE);
 }
 
-void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame) {
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame, double supposed_time) {
+	UNUSED(supposed_time);
+
 	update_bg_buffers(tick, width, height);
 	memset(frame, BACKGROUND_GS, width * height * sizeof(color_t));
 

@@ -20,10 +20,14 @@ static void stop_daemon(void) {
 	pid_t pid = read_pid();
 	int ret = kill(pid, SIGTERM);
 
-	while (ret && errno == ESRCH) {
-		usleep(CHECK_STOPPED_INTERVAL_MCS);
-		ret = kill(pid, 0);
+	if (ret != 0 && errno == ESRCH) {
+		fprintf(stderr, "Process 'glitch-mint-logo' not started, cannot stop\n");
+		return;
 	}
+
+	do {
+		usleep(CHECK_STOPPED_INTERVAL_MCS);
+	} while (kill(pid, 0) == 0);
 }
 
 

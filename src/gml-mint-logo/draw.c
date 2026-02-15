@@ -8,6 +8,8 @@
 
 #include <assert.h>
 
+#define UNUSED(v) (void)(v)
+
 #define BG_GS_1 0x1A
 #define BG_GS_2 0x19
 
@@ -197,7 +199,9 @@ static void draw_system_name(int tick, uint16_t width, uint16_t height, color_t*
 }
 
 
-void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame) {
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame, double supposed_time) {
+	UNUSED(supposed_time);
+
 	draw_bg(tick, width, height, (uint8_t*) frame);
 	draw_logo(tick, width, height, (uint8_t*) frame);
 

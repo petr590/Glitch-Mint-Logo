@@ -8,7 +8,7 @@ extern void (*setup)(void);
 extern void (*setup_after_drm)(uint16_t, uint16_t);
 extern void (*cleanup_before_drm)(void);
 extern void (*cleanup)(void);
-extern void (*draw)(int, uint16_t, uint16_t, color_t*);
+extern void (*draw)(int, uint16_t, uint16_t, color_t*, double);
 
 void load_module(const char* filename);
 

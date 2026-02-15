@@ -21,8 +21,9 @@ static inline char random_char(void) {
 	return randrange('\x21', '\x7E');
 }
 
-void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame) {
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame, double supposed_time) {
 	UNUSED(tick);
+	UNUSED(supposed_time);
 
 	memset(frame, BACKGROUND_GS, width * height * sizeof(color_t));
 

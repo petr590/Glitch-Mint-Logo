@@ -1,5 +1,13 @@
 #!/bin/bash
 set -e
+
+dir=/var/lib/glitch-mint-logo
+
+if [ -d "$dir" ]; then
+	rm -f "$dir/boot-timings"
+	rmdir --ignore-fail-on-non-empty "$dir"
+fi
+
 systemctl disable\
 	gml-start.service\
 	gml-stop.service\

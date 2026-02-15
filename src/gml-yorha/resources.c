@@ -60,6 +60,8 @@ void gml_setup_after_drm(uint16_t width, uint16_t height) {
 	if (fabs(FPS - fps) > FPS_EPSILON) {
 		fps = FPS;
 	}
+
+	init_tracks();
 }
 
 // ------------------------------------------- cleanup --------------------------------------------

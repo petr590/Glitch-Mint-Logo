@@ -30,6 +30,12 @@
 
 #define FPS_PER_CHAR 1 // За сколько fps выводится 1 символ. Целое число
 
+// Коэффициент для рассчёта предполагаемого времени рендера. Из-за случайного направления линий
+// невозможно точно посчитать максимальную длину линии и, соответственно, время окончания рендера.
+// Коэффициент рассчитан на практике, для ращрешения 1920x1080. На других разрешениях, в теории,
+// может отличаться. Однако, погрешности здесь допустимы.
+#define SUPPOSED_RENDER_TIME_MULTIPLIER 1.3
+
 
 typedef struct {
 	int32_t x, y;
@@ -64,7 +70,7 @@ static int is_out_of_bounds(vec2i pos, int32_t w, int32_t h) {
 }
 
 
-static void init_tracks() {
+void init_tracks() {
 	for (uint16_t i = 0; i < SIDE; i++) {
 		track_t* track_ptr = tracks + i*2;
 		
@@ -142,13 +148,9 @@ static int32_t find_empty_track(int32_t w, int32_t h) {
 	return -1;
 }
 
-static void update_bg_buffers(int tick, uint16_t width, uint16_t height) {
+static void update_bg_buffers(uint16_t width, uint16_t height) {
 	const int32_t w = i32_div_ceil(i32_div_ceil(width  + LINE_WIDTH / 2, 2), CELL_SIZE);
 	const int32_t h = i32_div_ceil(i32_div_ceil(height + LINE_WIDTH / 2, 2), CELL_SIZE);
-
-	if (tick == 0) {
-		init_tracks();
-	}
 
 	const uint16_t tracks_size_local = tracks_size;
 
@@ -255,10 +257,7 @@ static int get_scaled(const bitset2d* bitset, int32_t x, int32_t y) {
 	return bitset2d_get(bitset, x / CELL_SIZE, y / CELL_SIZE);
 }
 
-
-void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame) {
-	update_bg_buffers(tick, width, height);
-
+static void draw_bg_and_logo(uint16_t width, uint16_t height, color_t* frame) {
 	const int32_t img_w = (int32_t) png_get_image_width(png_ptr, info_ptr);
 	const int32_t img_h = (int32_t) png_get_image_height(png_ptr, info_ptr);
 	const color_t** img_data = (const color_t**) png_get_rows(png_ptr, info_ptr);
@@ -301,6 +300,33 @@ void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame) {
 			}
 		}
 	}
+}
+
+
+static double get_target_speed(uint16_t width, uint16_t height, double supposed_time) {
+	if (supposed_time <= 0.0 || !isfinite(supposed_time))
+		return 1.0;
+
+	const int32_t distance_to_corner = i32_div_ceil(width, 2 * CELL_SIZE) + i32_div_ceil(height, 2 * CELL_SIZE) - SIDE / 2;
+	return fclamp(SUPPOSED_RENDER_TIME_MULTIPLIER * distance_to_corner / supposed_time, 1.0, 2.0);
+}
+
+
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame, double supposed_time) {
+	static int updates = 0;
+
+	update_bg_buffers(width, height);
+	updates += 1;
+
+	const double speed = (double) updates / (tick + 1);
+	const double target_speed = get_target_speed(width, height, supposed_time);
+
+	if (speed < target_speed) {
+		update_bg_buffers(width, height);
+		updates += 1;
+	}
+
+	draw_bg_and_logo(width, height, frame);
 
 	read_from_socket();
 

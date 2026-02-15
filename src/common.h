@@ -6,7 +6,7 @@
  * 
  * void gml_setup(void);
  * void gml_setup_after_drm(uint16_t width, uint16_t height);
- * void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame);
+ * void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame, double supposed_time);
  * void gml_cleanup_before_drm(void);
  * void gml_cleanup(void);
  * 
@@ -41,7 +41,7 @@ extern double fps;
 
 /**
  * Читает строку конфига по ключу key и возвращает её.
- * Если такой строки нет, выводит сообщение об ошибке и выходит.
+ * Если такой строки нет, выводит сообщение об ошибке и завершает процесс.
  * Строка копируется с помощью strdup() для избегания ошибок.
  * Удалять через free().
  */

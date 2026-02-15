@@ -6,6 +6,7 @@
 const char* module_name;
 const char* card_path;
 const char* socket_path;
+const char* boot_timings_path;
 
 void read_config_file(const char* filename) {
 	config_t cfg; 
@@ -17,9 +18,10 @@ void read_config_file(const char* filename) {
 		exit(EXIT_FAILURE);
 	}
 
-	module_name = read_config_str(&cfg, "module");
-	card_path    = read_config_str(&cfg, "card_path");
-	socket_path = read_config_str(&cfg, "socket_path");
+	module_name       = read_config_str(&cfg, "module");
+	card_path         = read_config_str(&cfg, "card_path");
+	socket_path       = read_config_str(&cfg, "socket_path");
+	boot_timings_path = read_config_str(&cfg, "boot_timings_path");
 
 	load_module(module_name);
 	read_config(&cfg);
@@ -28,6 +30,8 @@ void read_config_file(const char* filename) {
 }
 
 void cleanup_paths(void) {
-	if (card_path)    { free((void*) card_path);    card_path    = NULL; }
-	if (module_name) { free((void*) module_name); module_name = NULL; }
+	if (boot_timings_path) { free((void*) boot_timings_path); boot_timings_path = NULL; }
+	if (socket_path)       { free((void*) socket_path);       socket_path       = NULL; }
+	if (card_path)         { free((void*) card_path);         card_path         = NULL; }
+	if (module_name)       { free((void*) module_name);       module_name       = NULL; }
 }

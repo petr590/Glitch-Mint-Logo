@@ -6,13 +6,18 @@
 #include "metric.h"
 #include "drm.h"
 #include "util.h"
+#include "util/util.h"
 
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
+#include <errno.h>
 
 #define UNUSED(v) (void)(v)
+
+#define MAX_BOOT_TIMES_COUNT 10
 
 #define FFMPEG_OUT_FILE "/tmp/gml-demo.mp4"
 #define FFMPEG_CMD "ffmpeg -hide_banner -f rawvideo -pix_fmt bgra -s %ux%u -r %.2f -i - -c:v libx264 -pix_fmt yuv420p -preset ultrafast -y " FFMPEG_OUT_FILE
@@ -32,6 +37,59 @@ static void print_staticstics(void) {
 	metric_print(&draw_time_metric);
 	printf("\n");
 	metric_print(&drm_time_metric);
+}
+
+// ------------------------------------------ boot time -------------------------------------------
+
+static int read_boot_times(double* boot_times) {
+	FILE* fp = fopen(boot_timings_path, "r");
+
+	if (!fp) {
+		if (errno != ENOENT) {
+			fprintf(stderr, "Cannot open '%s': skipping\n", boot_timings_path);
+		}
+
+		return 0;
+	}
+
+	int count = 0;
+	while (count < MAX_BOOT_TIMES_COUNT && fscanf(fp, "%lf", &boot_times[count]) == 1) {
+		count++;
+	}
+
+	fclose(fp);
+	return count;
+}
+
+static double get_supposed_time(const double* boot_times, int count) {
+	if (count == 0) {
+		return 0;
+	}
+
+	double sum_time = 0;
+	for (int i = 0; i < count; i++) {
+		sum_time += boot_times[i];
+	}
+
+	return count == 0 ? 0 : sum_time / count;
+}
+
+static void write_boot_times(const double* boot_times, int count, double new_boot_time) {
+	create_dirs(boot_timings_path);
+
+	FILE* fp = fopen(boot_timings_path, "w");
+
+	if (!fp) {
+		fprintf(stderr, "Cannot open '%s' (skipping): %s\n", boot_timings_path, strerror(errno));
+		return;
+	}
+
+	for (int i = count < MAX_BOOT_TIMES_COUNT ? 0 : 1; i < count; i++) {
+		fprintf(fp, "%lf\n", boot_times[i]);
+	}
+
+	fprintf(fp, "%lf\n", new_boot_time);
+	fclose(fp);
 }
 
 // -------------------------------------------- render --------------------------------------------
@@ -125,7 +183,7 @@ static void* render_front(void* data) {
 static FILE* ffmpeg_pipe;
 static pthread_t drm_thread;
 
-static void render_back(void) {
+static void render_back(double supposed_time) {
 	const uint16_t width = connector->modes[0].hdisplay;
 	const uint16_t height = connector->modes[0].vdisplay;
 
@@ -134,7 +192,7 @@ static void render_back(void) {
 	for (int tick = 0;; tick++) {
 		double draw_start = get_time_in_secs();
 		
-		draw(tick, width, height, fb_back->vaddr);
+		draw(tick, width, height, fb_back->vaddr, supposed_time);
 
 		double draw_end = get_time_in_secs();
 		metric_add(&draw_time_metric, (draw_end - draw_start) * 1000);
@@ -210,7 +268,7 @@ void start_render(void) {
 	fb_back = fb_info3;
 
 	if (record_video) {
-		double local_fps = fmax(fmin(fps, 1000), 0);
+		double local_fps = fclamp(fps, 0, 1000);
 
 		char command[FFMPEG_CMD_BUFFER_SIZE];
 		sprintf(command, FFMPEG_CMD, width, height, local_fps);
@@ -222,13 +280,22 @@ void start_render(void) {
 		}
 	}
 
-	int ret = pthread_create(&drm_thread, NULL, render_front, NULL);
+	double boot_times[MAX_BOOT_TIMES_COUNT];
+	const int boot_times_count = read_boot_times(boot_times);
+
+	const int ret = pthread_create(&drm_thread, NULL, render_front, NULL);
 	if (ret) {
 		fprintf(stderr, "Failed to create thread\n");
 		exit(EXIT_FAILURE);
 	}
 
-	render_back();
+	const double supposed_time = get_supposed_time(boot_times, boot_times_count);
+	const double start_time = get_time_in_secs();
+
+	render_back(supposed_time);
+
+	const double end_time = get_time_in_secs();
+	write_boot_times(boot_times, boot_times_count, end_time - start_time);
 
 	pthread_join(drm_thread, NULL);
 	drm_thread = 0;

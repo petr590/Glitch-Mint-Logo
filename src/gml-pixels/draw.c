@@ -15,6 +15,8 @@
 
 #include <assert.h>
 
+#define UNUSED(v) (void)(v)
+
 #define BACKGROUND_GS 0x33
 #define BACKGROUND (BACKGROUND_GS << 16 | BACKGROUND_GS << 8 | BACKGROUND_GS)
 #define FOREGROUND 0xCCCCCC
@@ -108,7 +110,9 @@ static int buffer_get_scaled(int32_t x, int32_t y) {
 	return bitset2d_get(&buffer, x / PIXEL_SIZE, y / PIXEL_SIZE);
 }
 
-void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame) {
+void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame, double supposed_time) {
+	UNUSED(supposed_time);
+
 	fill_buffer(tick, width, height);
 
 	for (uint16_t y = 0; y < height; y++) {

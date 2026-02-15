@@ -4,6 +4,7 @@
 extern const char* module_name;
 extern const char* card_path;
 extern const char* socket_path;
+extern const char* boot_timings_path;
 
 void read_config_file(const char* filename);
 void cleanup_paths(void);

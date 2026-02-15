@@ -19,16 +19,10 @@ static inline uint32_t u32min(uint32_t num1, uint32_t num2) {
 	return num1 < num2 ? num1 : num2;
 }
 
-static inline double f64max(double num1, double num2) {
-	return  num1 != num1 ? num1 : // nan
-			num2 != num2 ? num2 : // nan
-			num1 > num2 ? num1 : num2;
-}
-
-static inline double f64min(double num1, double num2) {
-	return  num1 != num1 ? num1 : // nan
-			num2 != num2 ? num2 : // nan
-			num1 < num2 ? num1 : num2;
+static inline double fclamp(double val, double min, double max) {
+	return  val < min ? min :
+			val > max ? max :
+			val;
 }
 
 /** Накладывает второй цвет на первый, учитывая его прозрачность. */

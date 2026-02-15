@@ -16,6 +16,10 @@ double get_time_in_secs(void) {
 	return time.tv_sec + time.tv_nsec * 1e-9;
 }
 
+/// @brief Создаёт все папки по указанному пути
+/// @param path ауть к папке или файлу. Если указан путь к файлу (то есть без завершающего слеша),
+/// то файл не будет создан - ни в виде файла, ни в виде папки. То есть безопасно написать так: `create_dirs("/usr/bin/script")`.
+/// При этом будут созданы папки /usr/ и /usr/bin/, но не /usr/bin/script.
 void create_dirs(const char* path) {
 	char* buffer = strdup(path);
 	size_t pathlen = strlen(buffer);
@@ -26,7 +30,7 @@ void create_dirs(const char* path) {
 
 			struct stat st;
 			if (stat(buffer, &st) == -1) {
-				mkdir(buffer, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+				mkdir(buffer, (S_IRUSR | S_IWUSR | S_IXUSR) | (S_IRGRP | S_IWGRP | S_IXGRP) | (S_IROTH | S_IXOTH)); // rwxrwxr-x
 			}
 
 			buffer[i] = '/';

@@ -7,7 +7,7 @@ void (*setup)(void);
 void (*setup_after_drm)(uint16_t, uint16_t);
 void (*cleanup_before_drm)(void);
 void (*cleanup)(void);
-void (*draw)(int, uint16_t, uint16_t, color_t*);
+void (*draw)(int, uint16_t, uint16_t, color_t*, double);
 
 static void* load_sym(const char* filename, void* handle, const char* id) {
 	void* sym = dlsym(handle, id);
