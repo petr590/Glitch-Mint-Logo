@@ -16,11 +16,12 @@ static void (*on_error_func)(void);
 
 static void wrap_on_error(int signum) {
 	UNUSED(signum);
+	stopped = true;
 	if (on_error_func) on_error_func();
 }
 
 
-void add_signal_handlers(void (*on_error)(void)) {
+void add_error_signal_handler(void (*on_error)(void)) {
 	on_error_func = on_error;
 
 	sigset_t mask;

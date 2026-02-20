@@ -21,7 +21,7 @@
 #define TURN_CHANCE  0.4f // Шанс того, что линия повернёт
 #define SPLIT_CHANCE 0.2f // Шанс того, что линия разделится на две
 
-#define MAX_TRACKS_SIZE 200 // Максимальное количество треков на экране
+#define TRACKS_SIZE 255 // Максимальное количество треков на экране
 
 
 // Координаты начала текста на экране
@@ -56,8 +56,13 @@ static const vec2i8 DOWN  = { .x =  0, .y = -1 };
 static const vec2i8 LEFT  = { .x =  1, .y =  0 };
 static const vec2i8 RIGHT = { .x = -1, .y =  0 };
 
-static track_t tracks[MAX_TRACKS_SIZE];
-static uint16_t tracks_size;
+static track_t tracks[TRACKS_SIZE];
+
+static uint8_t empty_track_idxs[TRACKS_SIZE];
+static uint8_t empty_tracks_size;
+
+// Чекаем, что последний индекс влезет в тип данных индекса
+static_assert(TRACKS_SIZE < (1 << (8 * sizeof(empty_track_idxs[0]))));
 
 
 static int is_in_bounds(vec2i pos, int32_t w, int32_t h) {
@@ -71,6 +76,8 @@ static int is_out_of_bounds(vec2i pos, int32_t w, int32_t h) {
 
 
 void init_tracks() {
+	// fill tracks
+
 	for (uint16_t i = 0; i < SIDE; i++) {
 		track_t* track_ptr = tracks + i*2;
 		
@@ -86,16 +93,29 @@ void init_tracks() {
 		bitset2d_set_1(&p_bg_buffer, SIDE, i);
 	}
 
-	tracks_size = SIDE * 2;
+	const uint16_t FILLED_TRACKS = SIDE * 2;
+
 
 	#ifndef NDEBUG // Проверяем, что все координаты разные
-	for (uint16_t i = 0; i < tracks_size; i++) {
-		for (uint16_t j = i + 1; j < tracks_size; j++) {
+	for (uint16_t i = 0; i < FILLED_TRACKS; i++) {
+		for (uint16_t j = i + 1; j < FILLED_TRACKS; j++) {
 			assert( tracks[i].pos.x != tracks[j].pos.x ||
 					tracks[i].pos.y != tracks[j].pos.y);
 		}
 	}
 	#endif
+
+
+	// fill empty tracks
+
+	for (uint16_t i = 0; i < TRACKS_SIZE - FILLED_TRACKS; i++) {
+		const uint16_t index = i + FILLED_TRACKS;
+		tracks[index].pos.x = -1;
+		tracks[index].pos.y = -1;
+		empty_track_idxs[i] = index;
+	}
+
+	empty_tracks_size = TRACKS_SIZE - FILLED_TRACKS;
 
 	for (uint16_t dy = 0; dy < SIDE; dy++) {
 		for (uint16_t dx = 0; dx < SIDE; dx++) {
@@ -113,7 +133,7 @@ void init_tracks() {
 
 
 static void add_line(int32_t index, vec2i pos, vec2i8 offset) {
-	assert(index >= 0 && index < MAX_TRACKS_SIZE);
+	assert(index >= 0 && index < TRACKS_SIZE);
 
 	assert(
 		((offset.x == 1 || offset.x == -1) && offset.y == 0) ||
@@ -138,23 +158,44 @@ static void add_line(int32_t index, vec2i pos, vec2i8 offset) {
 }
 
 
-static int32_t find_empty_track(int32_t w, int32_t h) {
-	for (uint16_t i = 0; i < tracks_size; i++) {
-		if (is_out_of_bounds(tracks[i].pos, w, h)) {
-			return i;
-		}
+static int32_t find_empty_track(void) {
+	if (empty_tracks_size > 0) {
+		return empty_track_idxs[--empty_tracks_size];
+	} else {
+		return -1;
 	}
-
-	return -1;
 }
 
-static void update_bg_buffers(uint16_t width, uint16_t height) {
-	const int32_t w = i32_div_ceil(i32_div_ceil(width  + LINE_WIDTH / 2, 2), CELL_SIZE);
-	const int32_t h = i32_div_ceil(i32_div_ceil(height + LINE_WIDTH / 2, 2), CELL_SIZE);
+static void make_track_empty(uint16_t index) {
+	tracks[index].pos.x = -1;
+	tracks[index].pos.y = -1;
 
-	const uint16_t tracks_size_local = tracks_size;
+	assert(empty_tracks_size < TRACKS_SIZE);
+	empty_track_idxs[empty_tracks_size++] = index;
+}
 
-	for (uint16_t i = 0; i < tracks_size_local; i++) {
+
+static uint8_t available_offsets(int32_t w, int32_t h, const vec2i pos, vec2i8 offsets[]) {
+	uint8_t offsets_size = 0;
+	if (pos.x > 0     && !bitset2d_get(&p_bg_buffer, pos.x - 1, pos.y)) offsets[offsets_size++] = RIGHT;
+	if (pos.y > 0     && !bitset2d_get(&p_bg_buffer, pos.x, pos.y - 1)) offsets[offsets_size++] = DOWN;
+	if (pos.x + 1 < w && !bitset2d_get(&p_bg_buffer, pos.x + 1, pos.y)) offsets[offsets_size++] = LEFT;
+	if (pos.y + 1 < h && !bitset2d_get(&p_bg_buffer, pos.x, pos.y + 1)) offsets[offsets_size++] = UP;
+	return offsets_size;
+}
+
+static uint8_t available_offsets_count(int32_t w, int32_t h, const vec2i pos) {
+	uint8_t offsets_size = 0;
+	if (pos.x > 0     && !bitset2d_get(&p_bg_buffer, pos.x - 1, pos.y)) offsets_size++;
+	if (pos.y > 0     && !bitset2d_get(&p_bg_buffer, pos.x, pos.y - 1)) offsets_size++;
+	if (pos.x + 1 < w && !bitset2d_get(&p_bg_buffer, pos.x + 1, pos.y)) offsets_size++;
+	if (pos.y + 1 < h && !bitset2d_get(&p_bg_buffer, pos.x, pos.y + 1)) offsets_size++;
+	return offsets_size;
+}
+
+
+static void step_all_tracks(int32_t w, int32_t h) {
+	for (uint16_t i = 0; i < TRACKS_SIZE; i++) {
 		vec2i pos = tracks[i].pos;
 
 		if (is_out_of_bounds(pos, w, h)) {
@@ -173,12 +214,7 @@ static void update_bg_buffers(uint16_t width, uint16_t height) {
 		}
 
 		vec2i8 offsets[4];
-		int offsets_size = 0;
-
-		if (pos.x > 0     && !bitset2d_get(&p_bg_buffer, pos.x - 1, pos.y)) offsets[offsets_size++] = RIGHT;
-		if (pos.y > 0     && !bitset2d_get(&p_bg_buffer, pos.x, pos.y - 1)) offsets[offsets_size++] = DOWN;
-		if (pos.x + 1 < w && !bitset2d_get(&p_bg_buffer, pos.x + 1, pos.y)) offsets[offsets_size++] = LEFT;
-		if (pos.y + 1 < h && !bitset2d_get(&p_bg_buffer, pos.x, pos.y + 1)) offsets[offsets_size++] = UP;
+		const uint8_t offsets_size = available_offsets(w, h, pos, offsets);
 
 		if (offsets_size >= 1) {
 			int j = rand() % offsets_size;
@@ -187,13 +223,7 @@ static void update_bg_buffers(uint16_t width, uint16_t height) {
 			if (offsets_size >= 2 && chance(SPLIT_CHANCE)) {
 				j = (j + 1) % offsets_size;
 
-				int32_t new_pos_index = -1;
-
-				if (tracks_size < MAX_TRACKS_SIZE - 1) {
-					new_pos_index = tracks_size++;
-				} else {
-					new_pos_index = find_empty_track(w, h);
-				}
+				const int32_t new_pos_index = find_empty_track();
 
 				if (new_pos_index >= 0) {
 					add_line(new_pos_index, pos, offsets[j]);
@@ -201,10 +231,67 @@ static void update_bg_buffers(uint16_t width, uint16_t height) {
 			}
 
 		} else {
-			tracks[i].pos.x = -1;
-			tracks[i].pos.y = -1;
+			make_track_empty(i);
 		}
 	}
+}
+
+
+static bool is_on_edge(int32_t w, int32_t h, vec2i pos) {
+	return is_in_bounds(pos, w, h) && bitset2d_get(&p_bg_buffer, pos.x, pos.y) && available_offsets_count(w, h, pos) > 0;
+}
+
+
+static void add_new_track(int32_t w, int32_t h, vec2i pos) {
+	vec2i8 offsets[4];
+	const uint8_t offsets_size = available_offsets(w, h, pos, offsets);
+
+	for (uint8_t i = 0; i < offsets_size; i++) {
+		const int32_t new_pos_index = find_empty_track();
+
+		if (new_pos_index >= 0) {
+			add_line(new_pos_index, pos, offsets[i]);
+		} else {
+			break;
+		}
+	}
+}
+
+
+static void add_new_tracks(int32_t w, int32_t h) {
+	if (empty_tracks_size == 0) {
+		return;
+	}
+
+	const vec2i pos = {
+		.x = rand() % w,
+		.y = rand() % h,
+	};
+
+	vec2i poses[4] = { pos, pos, pos, pos };
+
+	while (is_in_bounds(poses[0], w, h) || is_in_bounds(poses[1], w, h) || is_in_bounds(poses[2], w, h) || is_in_bounds(poses[3], w, h)) {
+		for (int i = 0; i < 4; i++) {
+			if (is_on_edge(w, h, poses[i])) {
+				add_new_track(w, h, poses[i]);
+				return;
+			}
+		}
+
+		poses[0].y += UP.y;
+		poses[1].y += DOWN.y;
+		poses[2].x += LEFT.x;
+		poses[3].x += RIGHT.x;
+	}
+}
+
+
+static void update_bg_buffers(uint16_t width, uint16_t height) {
+	const int32_t w = i32_div_ceil(i32_div_ceil(width  + LINE_WIDTH / 2, 2), CELL_SIZE);
+	const int32_t h = i32_div_ceil(i32_div_ceil(height + LINE_WIDTH / 2, 2), CELL_SIZE);
+
+	step_all_tracks(w, h);
+	add_new_tracks(w, h);
 }
 
 
@@ -308,7 +395,8 @@ static double get_target_speed(uint16_t width, uint16_t height, double supposed_
 		return 1.0;
 
 	const int32_t distance_to_corner = i32_div_ceil(width, 2 * CELL_SIZE) + i32_div_ceil(height, 2 * CELL_SIZE) - SIDE / 2;
-	return fclamp(SUPPOSED_RENDER_TIME_MULTIPLIER * distance_to_corner / supposed_time, 1.0, 2.0);
+	const double speed = (SUPPOSED_RENDER_TIME_MULTIPLIER * distance_to_corner) / (supposed_time * fps);
+	return fclamp(speed, 1.0, 2.0);
 }
 
 

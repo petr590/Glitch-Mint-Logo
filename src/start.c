@@ -106,8 +106,16 @@ static pthread_mutex_t signal_mutex = PTHREAD_MUTEX_INITIALIZER;
 static volatile bool buffer_swapped;
 static pthread_mutex_t buffer_swap_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/// @brief true, когда первый поток увидел переменную stopped. Данная переменная необходима для корректного завершения потоков.
+/// Без неё переменная stopped может установиться между критическими секциями buffer_swap_mutex двух потоков, из-за чего первый
+// /поток не увидит её, а второй - увидит. На следующей же итерации случится deadlock, так как первый поток будет ждать сигнал
+/// от второго, уже завершившегося потока. А с этой переменной потоки всегда будут выходить синхронно.
 static volatile bool first_thread_stopped;
 
+static _Thread_local bool is_front_thread;
+
+/// @brief ожидает другой поток. Если другой поток уже готов, то посылает ему сигнал. После этого делает свап буфферов и проверяет флаг stopped.
+/// @return true, если нужно завершить текущий поток. Иначе false.
 static bool wait_and_swap_buffers(volatile bool* self_ready, const volatile bool* other_ready) {
 	pthread_mutex_lock(&signal_mutex);
 	*self_ready = true;
@@ -120,6 +128,8 @@ static bool wait_and_swap_buffers(volatile bool* self_ready, const volatile bool
 
 	pthread_mutex_unlock(&signal_mutex);
 
+
+	bool ret = false;
 
 	pthread_mutex_lock(&buffer_swap_mutex);
 
@@ -137,26 +147,26 @@ static bool wait_and_swap_buffers(volatile bool* self_ready, const volatile bool
 
 		if (stopped) {
 			first_thread_stopped = true;
-			pthread_mutex_unlock(&buffer_swap_mutex);
-			return true;
+			ret = true;
 		}
 
 	} else {
 		buffer_swapped = false;
-
+		
 		if (first_thread_stopped) {
-			pthread_mutex_unlock(&buffer_swap_mutex);
-			return true;
+			ret = true;
 		}
 	}
 
 	pthread_mutex_unlock(&buffer_swap_mutex);
-	return false;
+	return ret;
 }
 
 
 static void* render_front(void* data) {
 	UNUSED(data);
+
+	is_front_thread = true;
 
 	uint32_t connectors[] = { resources->connectors[0] };
 	const uint32_t crtc_id = resources->crtcs[0];
@@ -224,8 +234,7 @@ static void release_all(void) {
 		ffmpeg_pipe = NULL;
 	}
 
-	if (drm_thread) {
-		stopped = true;
+	if (!is_front_thread && drm_thread) {
 		pthread_join(drm_thread, NULL);
 		drm_thread = 0;
 	}
@@ -234,6 +243,11 @@ static void release_all(void) {
 	cleanup_drm();
 	if (cleanup) cleanup();
 	cleanup_paths();
+}
+
+static void release_all_and_exit(void) {
+	release_all();
+	_exit(1);
 }
 
 
@@ -253,13 +267,13 @@ void start_render(void) {
 	const uint16_t height = mode->vdisplay;
 	setup_after_drm(width, height);
 	
-	pid_t deamon_pid = fork();
+	const pid_t deamon_pid = fork();
 	if (deamon_pid) {
 		write_pid(deamon_pid);
 		return;
 	}
 	
-	add_signal_handlers(release_all);
+	add_error_signal_handler(release_all_and_exit);
 	atexit(release_all);
 	atexit(print_staticstics);
 	
@@ -268,7 +282,7 @@ void start_render(void) {
 	fb_back = fb_info3;
 
 	if (record_video) {
-		double local_fps = fclamp(fps, 0, 1000);
+		const double local_fps = fclamp(fps, 0, 1000);
 
 		char command[FFMPEG_CMD_BUFFER_SIZE];
 		sprintf(command, FFMPEG_CMD, width, height, local_fps);
