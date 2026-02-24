@@ -6,7 +6,6 @@
 
 #include "common.h"
 #include "util/bitset2d.h"
-#include <stdbool.h>
 #include <libpng/png.h>
 #include <systemd/sd-bus.h>
 #include <freetype2/ft2build.h>
@@ -31,7 +30,7 @@ extern bitset2d p_bg_buffer; // Буфер точек
 
 typedef struct running_str {
     const wchar_t* str;
-    bool printed;
+    int printed;
 } running_str_t;
 
 extern running_str_t running_strings[MAX_RUNNING_STRINGS];

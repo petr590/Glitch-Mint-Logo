@@ -6,6 +6,7 @@
 #include "util/util.h"
 #include "util/random.h"
 #include "util/render_glyph.h"
+#include <stdbool.h>
 #include <string.h>
 #include <math.h>
 #include <assert.h>
