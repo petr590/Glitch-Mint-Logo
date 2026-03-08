@@ -1,14 +1,14 @@
-module = "libgml-yorha.so";
+module = "libgml-glitch-logo.so";
 card_path = "/dev/dri/card0";
 socket_path = "/run/glitch-mint-logo/socket";
 boot_timings_path = "/var/lib/glitch-mint-logo/boot-timings";
 
-mint_logo__logo_path = "/etc/glitch-mint-logo/logo.png";
-mint_logo__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";
+glitch_logo__logo_dir  = "/etc/glitch-mint-logo/logo/";
+glitch_logo__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";
 
 matrix__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";
 
-pixels__logo_path = "/etc/glitch-mint-logo/logo_pixelart.png";
+pixel_logo__logo_path = "/etc/glitch-mint-logo/logo_pixelart.png";
 
 yorha__logo_path = "/etc/glitch-mint-logo/YoRHa_logo.png";
 yorha__font_path = "/etc/glitch-mint-logo/UbuntuMono-Bold.ttf";

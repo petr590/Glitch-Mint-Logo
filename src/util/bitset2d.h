@@ -2,6 +2,7 @@
 #define GML_UTIL_BITSET2D_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -19,9 +20,9 @@ void bitset2d_create(bitset2d* bitset, uint32_t width, uint32_t height);
 void bitset2d_destroy(bitset2d* bitset);
 
 void bitset2d_clear(bitset2d* bitset);
-int bitset2d_get(const bitset2d* bitset, int32_t x, int32_t y);
+bool bitset2d_get(const bitset2d* bitset, int32_t x, int32_t y);
 void bitset2d_set_0(bitset2d* bitset, int32_t x, int32_t y);
 void bitset2d_set_1(bitset2d* bitset, int32_t x, int32_t y);
-void bitset2d_set(bitset2d* bitset, int32_t x, int32_t y, int value);
+void bitset2d_set(bitset2d* bitset, int32_t x, int32_t y, bool value);
 
 #endif

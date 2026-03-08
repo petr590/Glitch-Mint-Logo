@@ -48,7 +48,7 @@ static void check_pos(const char* func, const bitset2d* bitset, index_t x, index
 #endif
 
 
-int bitset2d_get(const bitset2d* bitset, index_t x, index_t y) {
+bool bitset2d_get(const bitset2d* bitset, index_t x, index_t y) {
 	CHECK_POS("bitset2d_get", bitset, x, y);
 	size_t index = get_index(bitset, x, y);
 	return (bitset->data[index >> 3] >> (index & 0x7)) & 0x1;
@@ -74,7 +74,7 @@ void bitset2d_set_1(bitset2d* bitset, index_t x, index_t y) {
 	bitset2d_set_1_raw(bitset, x, y);
 }
 
-void bitset2d_set(bitset2d* bitset, index_t x, index_t y, int value) {
+void bitset2d_set(bitset2d* bitset, index_t x, index_t y, bool value) {
 	CHECK_POS("bitset2d_set", bitset, x, y);
 	(value ? bitset2d_set_1_raw(bitset, x, y) : bitset2d_set_0_raw(bitset, x, y));
 }

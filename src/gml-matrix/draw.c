@@ -1,3 +1,7 @@
+/**
+ * Файл отвечает за рендеринг изображения в буфер
+ */
+
 #include "module.h"
 #include "util/render_glyph.h"
 #include "util/random.h"

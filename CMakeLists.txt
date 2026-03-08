@@ -4,8 +4,10 @@ project(GlitchMintLogo VERSION 1.7.3 LANGUAGES C)
 include_directories(/usr/include/drm /usr/include/freetype2 ${CMAKE_SOURCE_DIR}/src)
 
 if(BUILD_TYPE MATCHES "Debug")
+	message("Debug build")
 	add_compile_options(-g)
 else()
+	message("Release build")
 	add_compile_options(-DNDEBUG -march=native -mfpmath=sse -flto)
 endif()
 
@@ -50,6 +52,7 @@ add_executable(
 	src/util/read_png.c
 	src/util/load_font.c
 	src/util/render_glyph.c
+	src/util/system_info.c
 )
 
 
@@ -57,15 +60,15 @@ target_link_options(glitch-mint-logo PRIVATE -rdynamic)
 target_link_libraries(glitch-mint-logo m config drm dl pthread png freetype)
 
 
-# libgml-logo.so
+# libgml-glitch-logo.so
 
 add_library(
-	gml-mint-logo SHARED
-	src/gml-mint-logo/resources.c
-	src/gml-mint-logo/draw.c
+	gml-glitch-logo SHARED
+	src/gml-glitch-logo/resources.c
+	src/gml-glitch-logo/draw.c
 )
 
-target_link_libraries(gml-mint-logo)
+target_link_libraries(gml-glitch-logo)
 
 
 # libgml-matrix.so
@@ -101,15 +104,15 @@ add_library(
 target_link_libraries(gml-processor)
 
 
-# libgml-pixels.so
+# libgml-pixel-logo.so
 
 add_library(
-	gml-pixels SHARED
-	src/gml-pixels/resources.c
-	src/gml-pixels/draw.c
+	gml-pixel-logo SHARED
+	src/gml-pixel-logo/resources.c
+	src/gml-pixel-logo/draw.c
 )
 
-target_link_libraries(gml-pixels)
+target_link_libraries(gml-pixel-logo)
 
 
 # libgml-yorha.so
@@ -121,4 +124,12 @@ add_library(
 	src/gml-yorha/draw.c
 )
 
-target_link_libraries(gml-yorha)
+# libgml-3d.so
+
+add_library(
+	gml-3d-experimental SHARED
+	src/gml-3d-experimental/resources.c
+	src/gml-3d-experimental/draw.c
+)
+
+target_link_libraries(gml-3d-experimental)

@@ -67,4 +67,4 @@ sudo update-grub
 - **card_path** - путь к файлу для сообщения с libdrm. По умолчанию **/dev/dri/card0**
 - **module** - название модуля. Все модули ищутся в папке /lib и начинаются с префикса _libgml-_
 - **socket_path** - путь к сокету для оповещения главного процесса о загрузке модулей
-- Настройки, специфичные для модулей (например, **mint_logo\_\_logo_path** и **mint_logo\_\_font_path** - настройки модуля **libgml-mint-logo.so**)
+- Настройки, специфичные для модулей (например, **glitch_logo\_\_logo_path** и **glitch_logo\_\_font_path** - настройки модуля **libgml-mint-logo.so**)

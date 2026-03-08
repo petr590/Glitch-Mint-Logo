@@ -1,3 +1,7 @@
+/**
+ * Файл отвечает за рендеринг изображения в буфер
+ */
+
 #include "module.h"
 #include "util/render_glyph.h"
 #include "util/random.h"
@@ -30,7 +34,6 @@
 #define MINOR_GLITCH_AMPLITUDE 4
 #define MINOR_GLITCH_CHANCE 0.2f
 
-#define TEXT_COLOR 0x87CF3E
 #define TEXT_PADDING 10
 
 /** Возвращает рандомное число между from и to включительно или from, если to < from.
@@ -189,7 +192,7 @@ static void draw_system_name(int tick, uint16_t width, uint16_t height, color_t*
 
 				if (tx >= 0 && tx < width) {
 					uint8_t alpha = buffer[y * glyph_w + x];
-					frame[(baseline - glyph->top + y) * width + tx] = mix(bg_buffer[y], alpha << 24 | TEXT_COLOR);
+					frame[(baseline - glyph->top + y) * width + tx] = mix(bg_buffer[y], alpha << 24 | text_color);
 				}
 			}
 		}

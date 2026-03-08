@@ -1,3 +1,7 @@
+/**
+ * Файл отвечает за загрузку и освобождение ресурсов
+ */
+
 #include "module.h"
 #include <stdlib.h>
 #include <time.h>

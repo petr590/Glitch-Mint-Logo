@@ -90,3 +90,11 @@
 
 ## Версия 1.8.2
 Исправлен баг в gml-yorha, когда выводилось всего 2 символа сообщения.
+
+## Версия 1.9.0
+Модуль gml-mint-logo переименован gml-glitch-logo.
+Модуль gml-pixels переименован gml-pixel-logo.
+Добавлены логотипы Ubuntu, Debian, Fedora, CentOS, Arch, Alt Linux и Manjaro в модуль gml-glitch-logo.
+Добавлен автоматический выбор подходящего логотипа на основе вывода команды lsb_release.
+Исправлено зависание (deadlock) процесса при сигналах SIGABRT, SIGSEGV, SIGFPE и SIGILL.
+Добавлен экспериментальный модуль для отрисовки 3D (в разработке).

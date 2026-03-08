@@ -6,13 +6,17 @@ trap kill_daemon SIGINT
 trap kill_daemon SIGTERM
 trap kill_daemon SIGQUIT
 
-kill_daemon() {
-    sudo "$dir/glitch-mint-logo" --config "$dir/config" --stop >> /tmp/stdout 2>> /tmp/stderr &&\
-    sleep 0.5 # Ждём завершения процесса после отправки SIGTERM
+print_stdout_stderr() {
     echo -e "\nstdout:"
     cat /tmp/stdout
     echo -e "\nstderr:"
     cat /tmp/stderr
+}
+
+kill_daemon() {
+    sudo "$dir/glitch-mint-logo" --config "$dir/config" --stop >> /tmp/stdout 2>> /tmp/stderr &&\
+    sleep 0.5 # Ждём завершения процесса после отправки SIGTERM
+    print_stdout_stderr
 }
 
 [ -n "$1" ] && time="$1" || time=10
@@ -20,4 +24,5 @@ kill_daemon() {
 
 sudo "$dir/glitch-mint-logo" --config "$dir/config" > /tmp/stdout 2> /tmp/stderr &&\
 sleep "$time" &&\
-kill_daemon
+kill_daemon ||\
+print_stdout_stderr

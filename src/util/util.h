@@ -19,6 +19,12 @@ static inline uint32_t u32min(uint32_t num1, uint32_t num2) {
 	return num1 < num2 ? num1 : num2;
 }
 
+static inline uint32_t u32clamp(uint32_t val, uint32_t min, uint32_t max) {
+	return  val < min ? min :
+			val > max ? max :
+			val;
+}
+
 static inline double fclamp(double val, double min, double max) {
 	return  val < min ? min :
 			val > max ? max :

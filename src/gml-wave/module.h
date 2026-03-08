@@ -1,6 +1,7 @@
 /**
  * Заголовок модуля. Содержит объявления функций, которые реализует модуль.
  */
+ 
 #ifndef GML_WAVE_MODULE_H
 #define GML_WAVE_MODULE_H
 

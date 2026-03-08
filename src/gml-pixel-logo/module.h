@@ -1,23 +1,20 @@
 /**
  * Заголовок модуля. Содержит объявления функций, которые реализует модуль.
  */
-#ifndef GML_MINT_LOGO_MODULE_H
-#define GML_MINT_LOGO_MODULE_H
+ 
+#ifndef GML_PIXEL_LOGO_MODULE_H
+#define GML_PIXEL_LOGO_MODULE_H
 
 #include "common.h"
+#include "util/bitset2d.h"
 #include <libpng/png.h>
-#include <freetype2/ft2build.h>
-#include FT_FREETYPE_H
 
-#define FPS 8
-#define GLYPH_HEIGHT 20
+#define PIXEL_SIZE 4
 
-extern int RANDOM_CONSTANT;
-extern const char* system_name;
 extern png_structp png_ptr;
 extern png_infop info_ptr, end_info;
-extern FT_Face face;
-extern color_t* bg_buffer; // Буфер размером height
+
+extern bitset2d buffer;
 
 // Следующие функции вызываются в том порядке, в котором объявлены
 
@@ -26,7 +23,11 @@ void gml_read_config(config_t*);
 /** Загружает и инициализирует ресурсы модуля */
 void gml_setup(void);
 
-/** Загружает и инициализирует ресурсы модуля после загрузки libdrm */
+/**
+ * Загружает и инициализирует ресурсы модуля после загрузки libdrm.
+ * @param width - ширина экрана.
+ * @param height - высота экрана.
+ */
 void gml_setup_after_drm(uint16_t width, uint16_t height);
 
 
@@ -41,10 +42,10 @@ void gml_setup_after_drm(uint16_t width, uint16_t height);
 void gml_draw(int tick, uint16_t width, uint16_t height, color_t* frame, double supposed_time);
 
 
-/** Освобождает ресурсы модуля перед освобождением ресурсов libdrm */
+/** Освобождает ресурсы модуля перед освобождением ресурсов libdrm. */
 void gml_cleanup_before_drm(void);
 
-/** Освобождает ресурсы модуля */
+/** Освобождает ресурсы модуля. */
 void gml_cleanup(void);
 
 #endif

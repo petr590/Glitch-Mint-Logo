@@ -1,6 +1,7 @@
 #include "signal_handlers.h"
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h> // DEBUG
 
 #define UNUSED(v) (void)(v)
 
@@ -15,9 +16,12 @@ static void set_stopped(int signum) {
 static void (*on_error_func)(void);
 
 static void wrap_on_error(int signum) {
+	fprintf(stderr, "wrap_on_error\n");
 	UNUSED(signum);
 	stopped = true;
+	fprintf(stderr, "wrap_on_error before end\n");
 	if (on_error_func) on_error_func();
+	fprintf(stderr, "wrap_on_error end\n");
 }
 
 

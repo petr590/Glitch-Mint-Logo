@@ -19,7 +19,7 @@ bitset2d buffer;
 
 
 void gml_read_config(config_t* cfgp) {
-	logo_path = read_config_str(cfgp, "pixels__logo_path");
+	logo_path = read_config_str(cfgp, "pixel_logo__logo_path");
 }
 
 // --------------------------------------------- setup --------------------------------------------

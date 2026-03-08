@@ -122,8 +122,18 @@ static bool wait_and_swap_buffers(volatile bool* self_ready, const volatile bool
 
 	if (*other_ready) {
 		pthread_cond_signal(&signal_cond);
+		
 	} else {
-		pthread_cond_wait(&signal_cond, &signal_mutex);
+		struct timespec wait_time;
+		clock_gettime(CLOCK_REALTIME, &wait_time);
+    	wait_time.tv_sec += 1;
+
+		if (pthread_cond_timedwait(&signal_cond, &signal_mutex, &wait_time) == ETIMEDOUT) {
+			*self_ready = false;
+			fprintf(stderr, "Warning: %s thread skipped by timeout\n", is_front_thread ? "back" : "front");
+		}
+
+		// pthread_cond_wait(&signal_cond, &signal_mutex); // Этот способ работает идеально, но зависает при зависании другого потока
 	}
 
 	pthread_mutex_unlock(&signal_mutex);
@@ -197,7 +207,7 @@ static void render_back(double supposed_time) {
 	const uint16_t width = connector->modes[0].hdisplay;
 	const uint16_t height = connector->modes[0].vdisplay;
 
-	const double frame_time = 1 / fps;
+	const double frame_time = 1.0 / fps;
 	
 	for (int tick = 0;; tick++) {
 		double draw_start = get_time_in_secs();
@@ -229,25 +239,39 @@ static void render_back(double supposed_time) {
 // -------------------------------------------- start ---------------------------------------------
 
 static void release_all(void) {
+	fprintf(stderr, "release_all\n");
+
 	if (ffmpeg_pipe) {
 		pclose(ffmpeg_pipe);
 		ffmpeg_pipe = NULL;
 	}
+
+	fprintf(stderr, "A\n");
 
 	if (!is_front_thread && drm_thread) {
 		pthread_join(drm_thread, NULL);
 		drm_thread = 0;
 	}
 
+	fprintf(stderr, "B\n");
+
 	if (cleanup_before_drm) cleanup_before_drm();
+	fprintf(stderr, "C\n");
 	cleanup_drm();
+	fprintf(stderr, "D\n");
 	if (cleanup) cleanup();
+	fprintf(stderr, "E\n");
 	cleanup_paths();
+
+	fprintf(stderr, "release_all end\n");
 }
 
 static void release_all_and_exit(void) {
+	fprintf(stderr, "release_all_and_exit\n");
 	release_all();
+	fprintf(stderr, "release_all_and_exit before end\n");
 	_exit(1);
+	fprintf(stderr, "release_all_and_exit end\n");
 }
 
 
